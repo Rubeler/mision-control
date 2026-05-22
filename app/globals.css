@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: #0D0D1A;
+  color: #E0E0E0;
+  font-family: 'Fira Sans', sans-serif;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0D0D1A; }
+::-webkit-scrollbar-thumb { background: #333366; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #00FFFF44; }
+
+@layer components {
+  .card {
+    @apply bg-card border border-border rounded-xl p-5;
+  }
+  .kpi-value {
+    @apply font-mono text-2xl font-bold;
+  }
+  .label {
+    @apply text-dim text-sm font-sans;
+  }
+  .glow-cyan { box-shadow: 0 0 16px rgba(0,255,255,0.2); }
+  .glow-lime  { box-shadow: 0 0 16px rgba(57,255,20,0.2); }
+  .glow-violet{ box-shadow: 0 0 16px rgba(187,134,252,0.2); }
+}
