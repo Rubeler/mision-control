@@ -13,8 +13,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-bg text-muted">
         <Sidebar />
         <Navbar />
-        <main className="ml-56 pt-14 min-h-screen">
-          <div className="p-6">{children}</div>
+        <main className="md:ml-56 pt-14 min-h-screen">
+          <div className="p-4 md:p-6">{children}</div>
         </main>
       </body>
     </html>

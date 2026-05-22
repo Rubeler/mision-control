@@ -1,7 +1,7 @@
 export default function Navbar() {
   const now = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
   return (
-    <header className="fixed top-0 left-56 right-0 h-14 bg-[#0D0D1A]/90 border-b border-border backdrop-blur-sm flex items-center justify-between px-6 z-30">
+    <header className="hidden md:flex fixed top-0 left-56 right-0 h-14 bg-[#0D0D1A]/90 border-b border-border backdrop-blur-sm items-center justify-between px-6 z-30">
       <p className="text-sm text-dim font-sans capitalize">{now}</p>
       <div className="flex items-center gap-3">
         <span className="text-sm text-muted font-sans">Bienvenido, <span className="text-cyan font-mono font-semibold">Rubén</span></span>
