@@ -1,15 +1,15 @@
 'use client'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { ventasCanal } from '@/lib/mock'
+import type { VentasCanal } from '@/app/page'
 
-export default function CanalDonut() {
+export default function CanalDonut({ data }: { data: VentasCanal[] }) {
   return (
     <div className="card h-72">
       <p className="label mb-4">Ventas por Canal</p>
       <ResponsiveContainer width="100%" height="85%">
         <PieChart>
           <Pie
-            data={ventasCanal}
+            data={data}
             dataKey="valor"
             nameKey="canal"
             cx="50%"
@@ -19,7 +19,7 @@ export default function CanalDonut() {
             paddingAngle={4}
             strokeWidth={0}
           >
-            {ventasCanal.map((entry, i) => (
+            {data.map((entry, i) => (
               <Cell key={i} fill={entry.color} opacity={0.9} />
             ))}
           </Pie>

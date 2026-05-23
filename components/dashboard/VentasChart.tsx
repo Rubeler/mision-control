@@ -1,15 +1,15 @@
 'use client'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { ventasMensuales } from '@/lib/mock'
+import type { VentasMes } from '@/app/page'
 
 const fmt = (v: number) => `$${(v / 1000).toFixed(0)}k`
 
-export default function VentasChart() {
+export default function VentasChart({ data }: { data: VentasMes[] }) {
   return (
     <div className="card h-72">
       <p className="label mb-4">Ventas vs Gastos — 2026</p>
       <ResponsiveContainer width="100%" height="85%">
-        <AreaChart data={ventasMensuales} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="gVentas" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%"  stopColor="#00FFFF" stopOpacity={0.3} />

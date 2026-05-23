@@ -6,6 +6,13 @@ import VentasChart from '@/components/dashboard/VentasChart'
 import CanalDonut from '@/components/dashboard/CanalDonut'
 import TopProductos from '@/components/dashboard/TopProductos'
 
+const MESES_ORDER = ['Ene','Feb','Mar','Abr','Mayo','Junio','Jul','Ago','Sep','Oct','Nov','Dic']
+const CANAL_COLORS: Record<string, string> = {
+  'Presencial': '#00FFFF',
+  'WhatsApp':   '#39FF14',
+  'IG':         '#BB86FC',
+}
+
 interface KPIs {
   totalVendido: number
   cantVentas: number
@@ -23,16 +30,23 @@ interface KPIs {
   margenNeto: number
 }
 
+export interface VentasMes   { mes: string; ventas: number; gastos: number }
+export interface VentasCanal { canal: string; valor: number; color: string }
+export interface TopProd     { producto: string; ventas: number; margen: number }
+
 const fmt = (n: number) => '$' + Math.abs(n).toLocaleString('es-AR')
 
 export default function Dashboard() {
-  const [kpis, setKpis] = useState<KPIs | null>(null)
+  const [kpis, setKpis]           = useState<KPIs | null>(null)
+  const [chartMeses, setChartMeses]   = useState<VentasMes[]>([])
+  const [chartCanal, setChartCanal]   = useState<VentasCanal[]>([])
+  const [chartProds, setChartProds]   = useState<TopProd[]>([])
 
   useEffect(() => {
     const cargar = async () => {
       const [{ data: ventas }, { data: gastos }] = await Promise.all([
-        supabase.from('ventas').select('precio_venta, margen_pct, utilidad_bruta, canal'),
-        supabase.from('gastos').select('tipo, monto')
+        supabase.from('ventas').select('precio_venta, margen_pct, utilidad_bruta, canal, mes, producto'),
+        supabase.from('gastos').select('tipo, monto, mes')
       ])
 
       const v = ventas || []
@@ -58,6 +72,46 @@ export default function Dashboard() {
         gastosFijos, gastosVariables, totalGastos, utilidadNeta,
         margenNeto: totalVendido ? utilidadNeta / totalVendido : 0
       })
+
+      // --- Chart: Ventas vs Gastos por mes ---
+      const vMap: Record<string, number> = {}
+      const gMap: Record<string, number> = {}
+      v.forEach(x => { if (x.mes) vMap[x.mes] = (vMap[x.mes] || 0) + (x.precio_venta || 0) })
+      g.forEach(x => { if (x.mes) gMap[x.mes] = (gMap[x.mes] || 0) + (x.monto || 0) })
+      const mesesActivos = new Set([...Object.keys(vMap), ...Object.keys(gMap)])
+      setChartMeses(MESES_ORDER.filter(m => mesesActivos.has(m)).map(m => ({
+        mes: m, ventas: vMap[m] || 0, gastos: gMap[m] || 0
+      })))
+
+      // --- Chart: Ventas por canal ---
+      const cMap: Record<string, number> = {}
+      v.forEach(x => {
+        const c = x.canal || 'Sin canal'
+        cMap[c] = (cMap[c] || 0) + (x.precio_venta || 0)
+      })
+      setChartCanal(Object.entries(cMap).filter(([,val]) => val > 0).map(([canal, valor]) => ({
+        canal, valor, color: CANAL_COLORS[canal] || '#888899'
+      })))
+
+      // --- Chart: Top 5 productos ---
+      const pMap: Record<string, { total: number; count: number; margen: number; nombre: string }> = {}
+      v.forEach(x => {
+        if (!x.producto) return
+        const key = x.producto.trim().toLowerCase()
+        if (!pMap[key]) pMap[key] = { total: 0, count: 0, margen: 0, nombre: x.producto.trim() }
+        pMap[key].total  += x.precio_venta || 0
+        pMap[key].count  += 1
+        pMap[key].margen += x.margen_pct || 0
+      })
+      setChartProds(
+        Object.values(pMap)
+          .map(({ nombre, total, count, margen }) => ({
+            producto: nombre, ventas: total,
+            margen: count > 0 ? (margen / count) * 100 : 0
+          }))
+          .sort((a, b) => b.ventas - a.ventas)
+          .slice(0, 5)
+      )
     }
     cargar()
   }, [])
@@ -104,13 +158,13 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2"><VentasChart /></div>
-        <CanalDonut />
+        <div className="lg:col-span-2"><VentasChart data={chartMeses} /></div>
+        <CanalDonut data={chartCanal} />
       </div>
 
       {/* Bottom row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TopProductos />
+        <TopProductos data={chartProds} />
 
         {/* KPIs Rentabilidad */}
         <div className="card space-y-3">
