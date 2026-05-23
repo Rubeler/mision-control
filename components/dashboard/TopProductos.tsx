@@ -12,8 +12,11 @@ export default function TopProductos({ data }: { data: TopProd[] }) {
             {data.map((p, i) => (
               <div key={i}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-muted truncate max-w-[60%]">{p.producto}</span>
-                  <span className="font-mono text-cyan">${p.ventas.toLocaleString('es-AR')}</span>
+                  <span className="text-muted truncate max-w-[55%]">{p.producto}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-dim font-mono">{p.count} {p.count === 1 ? 'venta' : 'ventas'}</span>
+                    <span className="font-mono text-cyan">${p.ventas.toLocaleString('es-AR')}</span>
+                  </div>
                 </div>
                 <div className="h-1.5 bg-card-2 rounded-full overflow-hidden">
                   <div

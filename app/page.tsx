@@ -32,7 +32,7 @@ interface KPIs {
 
 export interface VentasMes   { mes: string; ventas: number; gastos: number }
 export interface VentasCanal { canal: string; valor: number; color: string }
-export interface TopProd     { producto: string; ventas: number; margen: number }
+export interface TopProd     { producto: string; ventas: number; margen: number; count: number }
 
 const fmt = (n: number) => '$' + Math.abs(n).toLocaleString('es-AR')
 
@@ -106,7 +106,7 @@ export default function Dashboard() {
       setChartProds(
         Object.values(pMap)
           .map(({ nombre, total, count, margen }) => ({
-            producto: nombre, ventas: total,
+            producto: nombre, ventas: total, count,
             margen: count > 0 ? (margen / count) * 100 : 0
           }))
           .sort((a, b) => b.ventas - a.ventas)
