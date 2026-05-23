@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Download } from 'lucide-react'
+import { exportarExcel } from '@/lib/exportExcel'
 
 const tipoColor: Record<string, string> = {
   'Fijo':     'text-violet bg-violet/10 border-violet/30',
@@ -73,6 +74,15 @@ export default function GastosPage() {
           <button onClick={() => setOrden(o => o === 'asc' ? 'desc' : 'asc')}
             className="px-3 py-2 rounded-lg bg-card border border-border text-dim text-sm hover:text-muted hover:border-violet/30 transition-colors cursor-pointer font-mono">
             {orden === 'asc' ? '↑ Más antiguo' : '↓ Más reciente'}
+          </button>
+          <button onClick={() => exportarExcel([{
+            nombre: 'Gastos',
+            datos: gastos.map(g => ({
+              Mes: g.mes, Tipo: g.tipo, Categoría: g.categoria, Monto: g.monto
+            }))
+          }], 'Gastos_Debuenamadera')}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-dim text-sm hover:text-lime hover:border-lime/30 transition-colors cursor-pointer">
+            <Download size={15} /> Exportar
           </button>
           <button onClick={() => setModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet/10 border border-violet/30 text-violet text-sm hover:bg-violet/20 transition-colors cursor-pointer">

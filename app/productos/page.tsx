@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, Search, X, Pencil } from 'lucide-react'
+import { Plus, Search, X, Pencil, Download } from 'lucide-react'
+import { exportarExcel } from '@/lib/exportExcel'
 
 interface Producto { id: string; producto: string; costo: number; precio_venta: number; margen_pct: number }
 
@@ -90,10 +91,24 @@ export default function ProductosPage() {
           <h2 className="font-mono text-xl font-bold text-muted">Catálogo de Productos</h2>
           <p className="label mt-0.5">{filtered.length} productos · Margen promedio <span className="text-lime font-mono">{margenProm}%</span></p>
         </div>
-        <button onClick={abrirNuevo}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-lime/10 border border-lime/30 text-lime text-sm hover:bg-lime/20 transition-colors cursor-pointer">
-          <Plus size={15} /> Nuevo producto
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportarExcel([{
+            nombre: 'Productos',
+            datos: productos.map(p => ({
+              Producto: p.producto,
+              Costo: p.costo,
+              'Precio Venta': p.precio_venta,
+              'Margen %': p.margen_pct ? (p.margen_pct * 100).toFixed(1) + '%' : '',
+            }))
+          }], 'Productos_Debuenamadera')}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-dim text-sm hover:text-lime hover:border-lime/30 transition-colors cursor-pointer">
+            <Download size={15} /> Exportar
+          </button>
+          <button onClick={abrirNuevo}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-lime/10 border border-lime/30 text-lime text-sm hover:bg-lime/20 transition-colors cursor-pointer">
+            <Plus size={15} /> Nuevo producto
+          </button>
+        </div>
       </div>
 
       <div className="relative">

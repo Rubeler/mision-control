@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, Search, X, Pencil } from 'lucide-react'
+import { Plus, Search, X, Pencil, Download } from 'lucide-react'
+import { exportarExcel } from '@/lib/exportExcel'
 
 const canalColor: Record<string, string> = {
   'Presencial': 'text-cyan   bg-cyan/10   border-cyan/30',
@@ -117,6 +118,19 @@ export default function VentasPage() {
           <button onClick={() => setOrden(o => o === 'asc' ? 'desc' : 'asc')}
             className="px-3 py-2 rounded-lg bg-card border border-border text-dim text-sm hover:text-muted hover:border-cyan/30 transition-colors cursor-pointer font-mono">
             {orden === 'asc' ? '↑ Más antiguo' : '↓ Más reciente'}
+          </button>
+          <button onClick={() => exportarExcel([{
+            nombre: 'Ventas',
+            datos: ventas.map(v => ({
+              Fecha: v.fecha, Mes: v.mes, Producto: v.producto,
+              'Precio Venta': v.precio_venta,
+              'Margen %': v.margen_pct ? (v.margen_pct * 100).toFixed(1) + '%' : '',
+              'Utilidad Bruta': v.utilidad_bruta,
+              Canal: v.canal || 'Sin canal',
+            }))
+          }], 'Ventas_Debuenamadera')}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-dim text-sm hover:text-lime hover:border-lime/30 transition-colors cursor-pointer">
+            <Download size={15} /> Exportar
           </button>
           <button onClick={() => setModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan/10 border border-cyan/30 text-cyan text-sm hover:bg-cyan/20 transition-colors cursor-pointer">
