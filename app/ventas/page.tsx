@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, Search, X, Pencil, Download } from 'lucide-react'
+import { Plus, Search, X, Pencil, Download, Trash2 } from 'lucide-react'
 import { exportarExcel } from '@/lib/exportExcel'
 
 const canalColor: Record<string, string> = {
@@ -17,8 +17,20 @@ interface Venta {
 }
 interface Producto { id: string; producto: string; costo: number; precio_venta: number; margen_pct: number }
 
-const MESES = ['Ene','Feb','Mar','Abr','Mayo','Junio','Jul','Ago','Sep','Oct','Nov','Dic']
+type EditForm = {
+  id: string; fecha: string; mes: string; producto: string
+  precio_venta: string; costo: string; margen_pct: string; utilidad_bruta: string; canal: string
+}
+
+const MESES  = ['Ene','Feb','Mar','Abr','Mayo','Junio','Jul','Ago','Sep','Oct','Nov','Dic']
 const CANALES = ['Presencial','WhatsApp','IG']
+
+const calcMargen = (precio: string, costo: string) => {
+  const p = parseFloat(precio) || 0
+  const c = parseFloat(costo) || 0
+  if (p > 0 && c > 0) return { margen_pct: ((p - c) / p).toFixed(4), utilidad_bruta: (p - c).toFixed(0) }
+  return null
+}
 
 export default function VentasPage() {
   const [ventas, setVentas]       = useState<Venta[]>([])
@@ -28,7 +40,8 @@ export default function VentasPage() {
   const [orden, setOrden]         = useState<'asc'|'desc'>('asc')
   const [modal, setModal]         = useState(false)
   const [saving, setSaving]       = useState(false)
-  const [editVenta, setEditVenta] = useState<Venta | null>(null)
+  const [editForm, setEditForm]   = useState<EditForm | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const hoy       = new Date()
   const mesActual = MESES[hoy.getMonth()]
@@ -54,25 +67,28 @@ export default function VentasPage() {
   const onProductoChange = (nombre: string) => {
     const prod = productos.find(p => p.producto === nombre)
     if (prod) {
-      const precio = parseFloat(form.precio_venta) || prod.precio_venta
-      const margen = (precio - prod.costo) / precio
-      setForm(f => ({ ...f, producto: nombre, costo: prod.costo.toString(),
-        margen_pct: margen.toFixed(4), utilidad_bruta: (precio * margen).toFixed(0) }))
+      setForm(f => {
+        const precio = parseFloat(f.precio_venta) || prod.precio_venta
+        const r = calcMargen(precio.toString(), prod.costo.toString())
+        return { ...f, producto: nombre, costo: prod.costo.toString(), ...(r || {}) }
+      })
     } else {
       setForm(f => ({ ...f, producto: nombre }))
     }
   }
 
   const onPrecioChange = (precio: string) => {
-    const p = parseFloat(precio) || 0
-    const c = parseFloat(form.costo) || 0
-    if (p > 0 && c > 0) {
-      const margen = (p - c) / p
-      setForm(f => ({ ...f, precio_venta: precio,
-        margen_pct: margen.toFixed(4), utilidad_bruta: (p * margen).toFixed(0) }))
-    } else {
-      setForm(f => ({ ...f, precio_venta: precio }))
-    }
+    setForm(f => {
+      const r = calcMargen(precio, f.costo)
+      return { ...f, precio_venta: precio, ...(r || {}) }
+    })
+  }
+
+  const onCostoChange = (costo: string) => {
+    setForm(f => {
+      const r = calcMargen(f.precio_venta, costo)
+      return { ...f, costo, ...(r || {}) }
+    })
   }
 
   const guardar = async () => {
@@ -92,12 +108,56 @@ export default function VentasPage() {
     cargarVentas()
   }
 
+  const abrirEdit = (v: Venta) => {
+    const costo = v.margen_pct ? Math.round(v.precio_venta * (1 - v.margen_pct)).toString() : ''
+    setEditForm({
+      id: v.id, fecha: v.fecha, mes: v.mes, producto: v.producto,
+      precio_venta: v.precio_venta.toString(), costo,
+      margen_pct: v.margen_pct?.toString() || '',
+      utilidad_bruta: v.utilidad_bruta?.toString() || '',
+      canal: v.canal || 'Presencial'
+    })
+    setConfirmDelete(false)
+  }
+
+  const onEditPrecioChange = (precio: string) => {
+    setEditForm(f => {
+      if (!f) return f
+      const r = calcMargen(precio, f.costo)
+      return { ...f, precio_venta: precio, ...(r || {}) }
+    })
+  }
+
+  const onEditCostoChange = (costo: string) => {
+    setEditForm(f => {
+      if (!f) return f
+      const r = calcMargen(f.precio_venta, costo)
+      return { ...f, costo, ...(r || {}) }
+    })
+  }
+
   const guardarEdit = async () => {
-    if (!editVenta) return
+    if (!editForm) return
     setSaving(true)
-    await supabase.from('ventas').update({ canal: editVenta.canal }).eq('id', editVenta.id)
+    await supabase.from('ventas').update({
+      fecha: editForm.fecha, mes: editForm.mes, producto: editForm.producto,
+      precio_venta: parseFloat(editForm.precio_venta),
+      margen_pct: parseFloat(editForm.margen_pct) || null,
+      utilidad_bruta: parseFloat(editForm.utilidad_bruta) || null,
+      canal: editForm.canal
+    }).eq('id', editForm.id)
     setSaving(false)
-    setEditVenta(null)
+    setEditForm(null)
+    cargarVentas()
+  }
+
+  const eliminar = async () => {
+    if (!editForm) return
+    setSaving(true)
+    await supabase.from('ventas').delete().eq('id', editForm.id)
+    setSaving(false)
+    setEditForm(null)
+    setConfirmDelete(false)
     cargarVentas()
   }
 
@@ -169,7 +229,7 @@ export default function VentasPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => setEditVenta({ ...v })}
+                    <button onClick={() => abrirEdit(v)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-card-2 border border-border text-dim hover:text-cyan hover:border-cyan/30 cursor-pointer">
                       <Pencil size={13} />
                     </button>
@@ -223,8 +283,7 @@ export default function VentasPage() {
               </div>
               <div>
                 <label className="label text-xs mb-1 block">Costo</label>
-                <input type="number" value={form.costo}
-                  onChange={e => { setForm(f => ({ ...f, costo: e.target.value })); onPrecioChange(form.precio_venta) }}
+                <input type="number" value={form.costo} onChange={e => onCostoChange(e.target.value)}
                   placeholder="auto del catálogo"
                   className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
               </div>
@@ -255,29 +314,92 @@ export default function VentasPage() {
         </div>
       )}
 
-      {/* MODAL EDITAR CANAL */}
-      {editVenta && (
+      {/* MODAL EDITAR VENTA */}
+      {editForm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-mono text-lg font-bold text-cyan">Editar Canal</h3>
-              <button onClick={() => setEditVenta(null)} className="text-dim hover:text-muted cursor-pointer"><X size={18}/></button>
+              <h3 className="font-mono text-lg font-bold text-cyan">Editar venta</h3>
+              <button onClick={() => setEditForm(null)} className="text-dim hover:text-muted cursor-pointer"><X size={18}/></button>
             </div>
-            <p className="text-sm text-muted">{editVenta.producto}</p>
-            <p className="text-xs text-dim">{editVenta.fecha} · ${editVenta.precio_venta?.toLocaleString('es-AR')}</p>
-            <div className="flex gap-2">
-              {CANALES.map(c => (
-                <button key={c} onClick={() => setEditVenta(ev => ev ? { ...ev, canal: c } : ev)}
-                  className={`flex-1 py-2.5 rounded-lg text-sm border transition-colors cursor-pointer
-                    ${editVenta.canal === c ? canalColor[c] : 'bg-card-2 border-border text-dim hover:text-muted'}`}>
-                  {c}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label text-xs mb-1 block">Fecha</label>
+                <input type="date" value={editForm.fecha}
+                  onChange={e => setEditForm(f => f ? { ...f, fecha: e.target.value } : f)}
+                  className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+              </div>
+              <div>
+                <label className="label text-xs mb-1 block">Mes</label>
+                <select value={editForm.mes} onChange={e => setEditForm(f => f ? { ...f, mes: e.target.value } : f)}
+                  className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50">
+                  {MESES.map(m => <option key={m}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="label text-xs mb-1 block">Producto</label>
+              <input value={editForm.producto}
+                onChange={e => setEditForm(f => f ? { ...f, producto: e.target.value } : f)}
+                className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label text-xs mb-1 block">Precio de venta</label>
+                <input type="number" value={editForm.precio_venta} onChange={e => onEditPrecioChange(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+              </div>
+              <div>
+                <label className="label text-xs mb-1 block">Costo</label>
+                <input type="number" value={editForm.costo} onChange={e => onEditCostoChange(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+              </div>
+            </div>
+            {editForm.margen_pct && (
+              <div className="bg-card-2 rounded-lg px-3 py-2 flex justify-between text-sm">
+                <span className="text-dim">Margen calculado</span>
+                <span className="font-mono text-lime font-bold">{(parseFloat(editForm.margen_pct)*100).toFixed(1)}%</span>
+              </div>
+            )}
+            <div>
+              <label className="label text-xs mb-1 block">Canal</label>
+              <div className="flex gap-2">
+                {CANALES.map(c => (
+                  <button key={c} onClick={() => setEditForm(f => f ? { ...f, canal: c } : f)}
+                    className={`flex-1 py-2 rounded-lg text-sm border transition-colors cursor-pointer
+                      ${editForm.canal === c ? canalColor[c] : 'bg-card-2 border-border text-dim hover:text-muted'}`}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {confirmDelete ? (
+              <div className="bg-red-400/10 border border-red-400/30 rounded-lg p-3 space-y-3">
+                <p className="text-sm text-red-400">¿Confirmás que querés eliminar esta venta?</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setConfirmDelete(false)}
+                    className="flex-1 py-2 rounded-lg border border-border text-dim text-sm hover:text-muted cursor-pointer">
+                    Cancelar
+                  </button>
+                  <button onClick={eliminar} disabled={saving}
+                    className="flex-1 py-2 rounded-lg bg-red-400/20 border border-red-400/40 text-red-400 text-sm font-semibold cursor-pointer disabled:opacity-40">
+                    {saving ? 'Eliminando...' : 'Sí, eliminar'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setConfirmDelete(true)}
+                  className="p-2.5 rounded-lg border border-border text-dim hover:text-red-400 hover:border-red-400/30 transition-colors cursor-pointer">
+                  <Trash2 size={16} />
                 </button>
-              ))}
-            </div>
-            <button onClick={guardarEdit} disabled={saving}
-              className="w-full py-2.5 rounded-lg bg-cyan/10 border border-cyan/30 text-cyan font-mono font-semibold hover:bg-cyan/20 transition-colors cursor-pointer disabled:opacity-40">
-              {saving ? 'Guardando...' : 'Guardar'}
-            </button>
+                <button onClick={guardarEdit} disabled={saving}
+                  className="flex-1 py-2.5 rounded-lg bg-cyan/10 border border-cyan/30 text-cyan font-mono font-semibold hover:bg-cyan/20 transition-colors cursor-pointer disabled:opacity-40">
+                  {saving ? 'Guardando...' : 'Guardar cambios'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
