@@ -1,15 +1,16 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
-  { href: '/',          label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/ventas',    label: 'Ventas',     icon: ShoppingCart },
-  { href: '/leads',     label: 'Leads CRM',  icon: Users },
-  { href: '/gastos',    label: 'Gastos',     icon: Receipt },
-  { href: '/productos', label: 'Productos',  icon: Package },
+  { href: '/',          label: 'Dashboard',   icon: LayoutDashboard, accent: false },
+  { href: '/ventas',    label: 'Ventas',      icon: ShoppingCart,    accent: false },
+  { href: '/leads',     label: 'Leads CRM',   icon: Users,           accent: false },
+  { href: '/gastos',    label: 'Gastos',      icon: Receipt,         accent: false },
+  { href: '/productos', label: 'Productos',   icon: Package,         accent: false },
+  { href: '/director',  label: 'Director OS', icon: Gauge,           accent: true  },
 ]
 
 export default function Sidebar() {
@@ -18,15 +19,23 @@ export default function Sidebar() {
 
   const NavLinks = () => (
     <>
-      {nav.map(({ href, label, icon: Icon }) => {
+      {nav.map(({ href, label, icon: Icon, accent }) => {
         const active = path === href
         return (
-          <Link key={href} href={href} onClick={() => setOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans transition-all duration-150 cursor-pointer
-              ${active ? 'bg-card-2 text-cyan border border-cyan/30 shadow-cyan' : 'text-dim hover:text-muted hover:bg-card'}`}>
-            <Icon size={17} className={active ? 'text-cyan' : ''} />
-            {label}
-          </Link>
+          <div key={href}>
+            {accent && <div className="border-t border-border my-2 mx-1" />}
+            <Link href={href} onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans transition-all duration-150 cursor-pointer
+                ${active
+                  ? 'bg-card-2 text-cyan border border-cyan/30 shadow-cyan'
+                  : accent
+                  ? 'text-violet/60 hover:text-violet hover:bg-violet/10 border border-transparent hover:border-violet/20'
+                  : 'text-dim hover:text-muted hover:bg-card'
+                }`}>
+              <Icon size={17} className={active ? 'text-cyan' : accent ? 'text-violet/60' : ''} />
+              {label}
+            </Link>
+          </div>
         )
       })}
     </>
