@@ -42,7 +42,11 @@ export async function POST(req: NextRequest) {
       for (const msg of mensajes) {
         if (msg.type !== 'text') continue
 
-        const waId   = msg.from as string
+        const waIdRaw = msg.from as string
+        // Argentina mobile numbers come as 541130216559 but need 5491130216559
+        const waId = waIdRaw.startsWith('54') && !waIdRaw.startsWith('549')
+          ? '549' + waIdRaw.slice(2)
+          : waIdRaw
         const texto  = (msg.text as { body: string })?.body ?? ''
         const nombre = contacts.find(c => c.wa_id === waId)?.profile?.name ?? 'Cliente'
         const fecha  = new Date().toISOString().split('T')[0]
