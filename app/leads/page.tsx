@@ -12,7 +12,7 @@ type Lead = {
   estado: string
   motivo: string | null
   telefono: string | null
-  observacion: string | null
+  notas: string | null
 }
 
 const ESTADOS = ['Nuevo', 'Seguimiento', 'Ganado', 'Perdido'] as const
@@ -37,7 +37,7 @@ const canalText: Record<string, string> = {
 }
 
 const hoy = new Date().toISOString().split('T')[0]
-const FORM_VACIO = { nombre: '', producto: '', canal: 'WhatsApp', fecha: hoy, estado: 'Nuevo', motivo: '', telefono: '', observacion: '' }
+const FORM_VACIO = { nombre: '', producto: '', canal: 'WhatsApp', fecha: hoy, estado: 'Nuevo', motivo: '', telefono: '', notas: '' }
 
 function formatFecha(f: string) {
   if (!f) return ''
@@ -104,7 +104,7 @@ export default function LeadsPage() {
       estado:      l.estado,
       motivo:      l.motivo || '',
       telefono:    l.telefono || '',
-      observacion: l.observacion || '',
+      notas: l.notas || '',
     })
     setShowModal(true)
   }
@@ -120,7 +120,7 @@ export default function LeadsPage() {
       estado:      form.estado,
       motivo:      form.estado === 'Perdido' ? (form.motivo || null) : null,
       telefono:    form.telefono || null,
-      observacion: form.observacion || null,
+      notas: form.notas || null,
     }
     const { error } = editLead
       ? await supabase.from('leads').update(payload).eq('id', editLead.id)
@@ -234,9 +234,9 @@ export default function LeadsPage() {
                   </div>
 
                   {l.motivo && <p className="text-xs text-red-400">↳ {l.motivo}</p>}
-                  {l.observacion && (
+                  {l.notas && (
                     <p className="text-xs text-dim/80 italic border-t border-border/50 pt-1.5">
-                      📝 {l.observacion}
+                      📝 {l.notas}
                     </p>
                   )}
 
@@ -297,7 +297,7 @@ export default function LeadsPage() {
 
             <div>
               <label className="label text-xs block mb-1">Observación</label>
-              <textarea value={form.observacion} onChange={e => setForm(f => ({ ...f, observacion: e.target.value }))}
+              <textarea value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
                 placeholder="Ej: Lo llamaron, mercadería lista, entrega el 5/6..."
                 rows={2}
                 className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50 resize-none" />
