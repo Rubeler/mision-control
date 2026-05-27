@@ -18,5 +18,13 @@ export async function enviarMensaje(para: string, texto: string): Promise<boolea
       text: { body: texto },
     }),
   })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    console.error('[WhatsApp] Error enviando mensaje:', JSON.stringify(err))
+  } else {
+    console.log('[WhatsApp] Mensaje enviado a', para)
+  }
+
   return res.ok
 }
