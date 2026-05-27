@@ -114,8 +114,9 @@ export default function DirectorPage() {
   const revenueHoy = ventasHoy.reduce((s, v) => s + (v.precio_venta || 0), 0)
 
   // --- Este mes ---
-  const ventasMes  = ventas.filter(v => v.mes === mesActualNombre)
-  const revenueMes = ventasMes.reduce((s, v) => s + (v.precio_venta || 0), 0)
+  const ventasMes        = ventas.filter(v => v.mes === mesActualNombre)
+  const revenueMes       = ventasMes.reduce((s, v) => s + (v.precio_venta || 0), 0)
+  const utilidadBrutaMes = ventasMes.reduce((s, v) => s + (v.utilidad_bruta || 0), 0)
 
   // --- Pipeline ---
   const pipeline = (['Nuevo', 'Seguimiento', 'Ganado', 'Perdido'] as const).map(estado => ({
@@ -212,8 +213,12 @@ export default function DirectorPage() {
               <p className="font-mono text-sm font-semibold text-muted mt-0.5">{fmt(utilidadBruta)}</p>
             </div>
             <div>
-              <p className="text-xs text-dim">{mesActualNombre} (mes)</p>
+              <p className="text-xs text-dim">{mesActualNombre} · revenue</p>
               <p className="font-mono text-sm font-semibold text-muted mt-0.5">{fmt(revenueMes)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-dim">{mesActualNombre} · utilidad</p>
+              <p className="font-mono text-sm font-semibold text-lime mt-0.5">{fmt(utilidadBrutaMes)}</p>
             </div>
           </div>
         </div>
