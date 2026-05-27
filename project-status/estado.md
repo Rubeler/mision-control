@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 26/05/2026
+**Última actualización:** 27/05/2026
 
 ---
 
@@ -11,41 +11,37 @@
 
 ---
 
-## Módulos completados
+## Módulos completados ✅
 - Dashboard con charts conectados a Supabase
 - Ventas — CRUD completo + exportación Excel
 - Gastos — CRUD completo + exportación Excel
 - Productos — CRUD completo + exportación Excel
-- Leads CRM — Kanban drag & drop conectado a Supabase
-- Director OS — métricas ejecutivas (gauges, KPIs)
+- Leads CRM — Kanban drag & drop + editar + eliminar + teléfono + notas
+- Director OS — métricas ejecutivas (gauges, KPIs, utilidad bruta del mes)
+- Navbar — fecha en tiempo real (no más fecha cacheada)
 - Webhook WhatsApp — recibe mensajes, crea leads automáticamente
 
 ---
 
-## Pendiente inmediato
+## Pendiente inmediato 🔧
 
-### 1. Probar auto-reply WhatsApp
-- Fix aplicado en commit `c5505e1`: normalización número Argentina (541130216559 → 5491130216559)
-- Para probar: borrar lead "Ruben - Hola Misión posible" en Supabase, luego mandar mensaje nuevo al +1 555 668 5409
+### Auto-reply WhatsApp — pendiente de prueba final
+- Último fix (commit `adb701e`): separar formato número para storage (`549...`) y envío (`54...`)
+- Para probar: borrar lead de prueba en Supabase → mandar mensaje a +1 555 668 5409
+- Número verificado en Meta: +54 9 11 3644 9059
+- Token vigente (renovado hoy ~18hs)
 
-### 2. Leads CRM — funciones faltantes
-- Ver número de WhatsApp en la tarjeta del lead
-- Editar lead (modal)
-- Eliminar lead (con confirmación)
-
----
-
-## WhatsApp — Configuración Meta
-- App en modo desarrollo (no publicada)
-- Número de prueba: +1 555 668 5409
-- Phone ID: 1121915487672651
-- Número destinatario de prueba: +54 11 3021-6559
-- Webhook suscripto al campo: `messages`
+### Historial de errores resueltos:
+1. ✅ Token expirado → renovado
+2. ✅ Número no verificado → verificado con OTP
+3. ✅ Bug nombre siempre "Cliente" → waIdRaw para buscar contacto
+4. 🔧 Formato número: webhook recibe `5491136449059`, Meta espera `541136449059` → fix aplicado, pendiente prueba
 
 ---
 
 ## Próximas features planeadas
-- WhatsApp avanzado: historial de conversaciones por lead, respuestas manuales desde la app
+- **Opción B WhatsApp**: conectar número real de negocio (no test)
+- **WhatsApp avanzado**: historial de conversaciones por lead, respuestas manuales desde la app
   - Requiere tabla `mensajes_whatsapp` en Supabase:
     ```sql
     create table mensajes_whatsapp (
@@ -57,3 +53,12 @@
       created_at timestamptz default now()
     );
     ```
+
+---
+
+## WhatsApp — Configuración Meta
+- App en modo desarrollo (no publicada)
+- Número de prueba: +1 555 668 5409
+- Phone ID: 1121915487672651
+- Número destinatario verificado: +54 9 11 3644 9059
+- Webhook suscripto al campo: `messages`
