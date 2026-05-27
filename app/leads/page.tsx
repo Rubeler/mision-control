@@ -12,6 +12,7 @@ type Lead = {
   estado: string
   motivo: string | null
   telefono: string | null
+  observacion: string | null
 }
 
 const ESTADOS = ['Nuevo', 'Seguimiento', 'Ganado', 'Perdido'] as const
@@ -36,7 +37,7 @@ const canalText: Record<string, string> = {
 }
 
 const hoy = new Date().toISOString().split('T')[0]
-const FORM_VACIO = { nombre: '', producto: '', canal: 'WhatsApp', fecha: hoy, estado: 'Nuevo', motivo: '', telefono: '' }
+const FORM_VACIO = { nombre: '', producto: '', canal: 'WhatsApp', fecha: hoy, estado: 'Nuevo', motivo: '', telefono: '', observacion: '' }
 
 function formatFecha(f: string) {
   if (!f) return ''
@@ -96,13 +97,14 @@ export default function LeadsPage() {
   const abrirEditar = (l: Lead) => {
     setEditLead(l)
     setForm({
-      nombre:   l.nombre || '',
-      producto: l.producto,
-      canal:    l.canal,
-      fecha:    l.fecha,
-      estado:   l.estado,
-      motivo:   l.motivo || '',
-      telefono: l.telefono || '',
+      nombre:      l.nombre || '',
+      producto:    l.producto,
+      canal:       l.canal,
+      fecha:       l.fecha,
+      estado:      l.estado,
+      motivo:      l.motivo || '',
+      telefono:    l.telefono || '',
+      observacion: l.observacion || '',
     })
     setShowModal(true)
   }
@@ -111,13 +113,14 @@ export default function LeadsPage() {
     if (!form.producto) return
     setSaving(true)
     const payload = {
-      nombre:   form.nombre || null,
-      producto: form.producto,
-      canal:    form.canal,
-      fecha:    form.fecha,
-      estado:   form.estado,
-      motivo:   form.estado === 'Perdido' ? (form.motivo || null) : null,
-      telefono: form.telefono || null,
+      nombre:      form.nombre || null,
+      producto:    form.producto,
+      canal:       form.canal,
+      fecha:       form.fecha,
+      estado:      form.estado,
+      motivo:      form.estado === 'Perdido' ? (form.motivo || null) : null,
+      telefono:    form.telefono || null,
+      observacion: form.observacion || null,
     }
     const { error } = editLead
       ? await supabase.from('leads').update(payload).eq('id', editLead.id)
@@ -231,6 +234,11 @@ export default function LeadsPage() {
                   </div>
 
                   {l.motivo && <p className="text-xs text-red-400">↳ {l.motivo}</p>}
+                  {l.observacion && (
+                    <p className="text-xs text-dim/80 italic border-t border-border/50 pt-1.5">
+                      📝 {l.observacion}
+                    </p>
+                  )}
 
                   {/* Confirmación eliminar */}
                   {confirmarId === l.id && (
@@ -285,6 +293,14 @@ export default function LeadsPage() {
               <input value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
                 placeholder="Ej: 1130216559"
                 className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+            </div>
+
+            <div>
+              <label className="label text-xs block mb-1">Observación</label>
+              <textarea value={form.observacion} onChange={e => setForm(f => ({ ...f, observacion: e.target.value }))}
+                placeholder="Ej: Lo llamaron, mercadería lista, entrega el 5/6..."
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50 resize-none" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
