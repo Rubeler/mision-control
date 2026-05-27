@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
         const waId = waIdRaw.startsWith('54') && !waIdRaw.startsWith('549')
           ? '549' + waIdRaw.slice(2)
           : waIdRaw
+        console.log('[WhatsApp] from (raw):', waIdRaw, '→ normalizado:', waId)
         const texto  = (msg.text as { body: string })?.body ?? ''
         const nombre = contacts.find(c => c.wa_id === waIdRaw)?.profile?.name ?? 'Cliente'
         const fecha  = new Date().toISOString().split('T')[0]
