@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
           ? '549' + waIdRaw.slice(2)
           : waIdRaw
         const texto  = (msg.text as { body: string })?.body ?? ''
-        const nombre = contacts.find(c => c.wa_id === waId)?.profile?.name ?? 'Cliente'
+        const nombre = contacts.find(c => c.wa_id === waIdRaw)?.profile?.name ?? 'Cliente'
         const fecha  = new Date().toISOString().split('T')[0]
 
         // Evitar leads duplicados: mismo número en los últimos 7 días
@@ -73,9 +73,9 @@ export async function POST(req: NextRequest) {
             telefono: waId,
           })
 
-          // Respuesta automática al cliente
+          // Respuesta automática al cliente (usar número original que Meta reconoce)
           await enviarMensaje(
-            waId,
+            waIdRaw,
             `¡Hola, ${nombre}! 👋 Gracias por escribirnos a *Debuenamadera*.\n\n` +
             `Recibimos tu consulta y ya la tenemos anotada.\n\n` +
             `Un asesor te responde a la brevedad. ✅`
