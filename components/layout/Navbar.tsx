@@ -1,5 +1,17 @@
+'use client'
+import { useEffect, useState } from 'react'
+
 export default function Navbar() {
-  const now = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const [now, setNow] = useState('')
+
+  useEffect(() => {
+    const actualizar = () =>
+      setNow(new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }))
+    actualizar()
+    const t = setInterval(actualizar, 60_000)
+    return () => clearInterval(t)
+  }, [])
+
   return (
     <header className="hidden md:flex fixed top-0 left-56 right-0 h-14 bg-[#0D0D1A]/90 border-b border-border backdrop-blur-sm items-center justify-between px-6 z-30">
       <p className="text-sm text-dim font-sans capitalize">{now}</p>
