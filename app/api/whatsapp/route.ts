@@ -43,14 +43,10 @@ export async function POST(req: NextRequest) {
         if (msg.type !== 'text') continue
 
         const waIdRaw = msg.from as string
-        // Para guardar en Supabase: con 549 (formato WhatsApp Argentina)
+        // Normalizar a formato 549... para storage y envío
         const waId = waIdRaw.startsWith('54') && !waIdRaw.startsWith('549')
           ? '549' + waIdRaw.slice(2)
           : waIdRaw
-        // Para enviar por API: sin el 9 (formato que acepta Meta)
-        const waIdEnvio = waId.startsWith('549')
-          ? '54' + waId.slice(3)
-          : waId
         const texto  = (msg.text as { body: string })?.body ?? ''
         const nombre = contacts.find(c => c.wa_id === waIdRaw)?.profile?.name ?? 'Cliente'
         const fecha  = new Date().toISOString().split('T')[0]
@@ -79,7 +75,7 @@ export async function POST(req: NextRequest) {
 
           // Respuesta automática al cliente
           await enviarMensaje(
-            waIdEnvio,
+            waId,
             `¡Hola, ${nombre}! 👋 Gracias por escribirnos a *Debuenamadera*.\n\n` +
             `Recibimos tu consulta y ya la tenemos anotada.\n\n` +
             `Un asesor te responde a la brevedad. ✅`
