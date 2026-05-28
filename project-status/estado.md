@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 28/05/2026
+**Última actualización:** 29/05/2026
 
 ---
 
@@ -57,8 +57,26 @@
 
 ---
 
+## Próximo a implementar 🔧
+
+### Módulo Catálogo — PRIORIDAD
+- Página `/catalogo` en Misión Control con fotos organizadas por categoría
+- Extraer imágenes del PDF `catalogo DBM muebles.pdf` (25 páginas, ya en la raíz del proyecto)
+- Subir imágenes a Supabase Storage
+- Filtro por categoría
+- Desde ficha de lead → botón "Enviar catálogo por WhatsApp" → manda fotos de la categoría pedida
+
+**Categorías del catálogo DBM (20 categorías):**
+Alacenas, Alzada de Ropero, Bahiut, Bajo Barra (L y recta), Bajo Mesada, Bajo Mesada+Alacena, Bajo Modulares, Barras, Bibliotecas, Chifoniers, Cómodas, Escritorios, Futon, Mesas de Luz, Mesas TV y Audio, Modulares, Roperos
+
+**Archivo fuente:** `catalogo DBM muebles.pdf` (raíz del proyecto) — PDF de imágenes, 25 páginas
+
+---
+
 ## Próximas features planeadas
-- **Opción B WhatsApp**: conectar número real de negocio (no test)
+- **Número real WhatsApp**: usar número dedicado para Debuenamadera (NO el personal +5491136449059 — eso desconecta el WhatsApp personal). Requiere segundo chip/número.
+- **Opción B WhatsApp**: conectar número real de negocio (no test) → solo cambiar `WHATSAPP_PHONE_ID` en Vercel + mover app a modo producción en Meta
+- **Multimedia entrante**: actualmente el webhook ignora fotos/videos/audio de leads (`msg.type !== 'text'`). A implementar: recibir media ID, descargar de Meta (expiran a 30 días), guardar en Supabase Storage
 - **WhatsApp avanzado**: historial de conversaciones por lead, respuestas manuales desde la app
   - Requiere tabla `mensajes_whatsapp` en Supabase:
     ```sql
