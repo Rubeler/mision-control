@@ -1,0 +1,34 @@
+===================================================================
+GUÍA DE SEGUIMIENTO ANTI-PESADOS - PRODUCTOS BLANCO & MADERA
+===================================================================
+Instrucción general para el Setter: Usar el nombre del cliente y el 
+mueble específico por el que consultó. Mantener tono servicial y fluido.
+
+-------------------------------------------------------------------
+PASO 1: EL SALVAVIDAS DE MEDIDAS (Enviar a las 24 - 48 horas del precio)
+-------------------------------------------------------------------
+"¡Hola [Nombre]! ¿Cómo estás? Te escribía para quedarme tranquila/o de que no te haya quedado ninguna duda con las medidas del mueble que consultaste (por ejemplo, el [Mueble]). 
+
+A veces un par de centímetros cambian todo en el ambiente. Si querés, me pasás la foto o la medida de tu espacio y te confirmo si va a quedar cómodo. ¡Avisame y lo miramos!"
+
+-------------------------------------------------------------------
+PASO 2: EL APORTE VISUAL (Enviar a los 3 - 4 días del Paso 1 si no respondió)
+-------------------------------------------------------------------
+*Instrucción: Adjuntar una foto linda del catálogo o de un cliente real.*
+
+"¡Hola [Nombre]! Te comparto por acá una foto de cómo queda este estilo combinado de madera y blanco ya colocado en la casa de uno de nuestros clientes de la zona. 
+
+Te lo muestro porque le da un montón de luz y calidez a los ambientes. Si todavía estás armando tu espacio, recordá que podemos coordinar el envío directo acá en Hurlingham/Tesei. ¡Cualquier cosa me avisás!"
+
+-------------------------------------------------------------------
+PASO 3: ÚLTIMO INTENTO / CIERRE DE LOGÍSTICA (Enviar a los 4 días del Paso 2)
+-------------------------------------------------------------------
+"¡Hola [Nombre]! Espero que estés muy bien. Te contacto por última vez porque estamos armando la tanda de producción y logística para esta semana de los muebles en melamina y madera. 
+
+Quería asegurarme de consultarte antes de cerrar los cupos por si querías reservar el tuyo y congelar el valor. Si decidís dejarlo para más adelante, no hay ningún problema, ¡avisame y liberamos el lugar! Que tengas un lindo día."
+
+===================================================================
+REGLA DE OREJA PARA EL SETTER:
+Si después del Paso 3 el cliente no responde en 48hs -> Mover en el 
+CRM a "Lead Frío / Archivado". No se le vuelve a escribir de forma individual.
+===================================================================

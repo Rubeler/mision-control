@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
@@ -11,6 +11,7 @@ const nav = [
   { href: '/gastos',    label: 'Gastos',      icon: Receipt,         accent: false },
   { href: '/productos', label: 'Productos',   icon: Package,         accent: false },
   { href: '/director',  label: 'Director OS', icon: Gauge,           accent: true  },
+  { href: '/catalogo',  label: 'Ver catálogo', icon: BookOpen,        accent: true  },
 ]
 
 export default function Sidebar() {
@@ -44,7 +45,7 @@ export default function Sidebar() {
   return (
     <>
       {/* DESKTOP sidebar */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-[#0D0D1A] border-r border-border flex-col z-40">
+      <aside data-admin className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-[#0D0D1A] border-r border-border flex-col z-40">
         <div className="px-5 py-6 border-b border-border">
           <p className="font-mono text-xs text-dim uppercase tracking-widest">Debuenamadera</p>
           <h1 className="font-mono text-lg font-bold text-cyan mt-0.5" style={{ textShadow: '0 0 10px rgba(0,255,255,0.5)' }}>
@@ -60,7 +61,7 @@ export default function Sidebar() {
       </aside>
 
       {/* MOBILE top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0D0D1A] border-b border-border flex items-center justify-between px-4 z-50">
+      <div data-admin className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0D0D1A] border-b border-border flex items-center justify-between px-4 z-50">
         <div>
           <p className="font-mono text-xs text-dim">Debuenamadera</p>
           <h1 className="font-mono text-sm font-bold text-cyan" style={{ textShadow: '0 0 8px rgba(0,255,255,0.5)' }}>
