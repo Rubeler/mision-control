@@ -294,11 +294,25 @@ export default function LeadsPage() {
                     </p>
                   )}
 
-                  {/* Botón enviar muebles */}
-                  <div onClick={e => e.stopPropagation()}>
+                  {/* Botones de envío */}
+                  <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
                     <button onClick={() => abrirEnvio(l)}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-lime/10 border border-lime/30 text-lime text-xs font-semibold hover:bg-lime/20 transition-colors cursor-pointer">
-                      <Send size={11} /> Enviar muebles
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-lime/10 border border-lime/30 text-lime text-xs font-semibold hover:bg-lime/20 transition-colors cursor-pointer">
+                      <Send size={11} /> Muebles
+                    </button>
+                    <button onClick={() => {
+                      const base = 'https://mision-control-omega.vercel.app/galeria'
+                      const nombre = l.nombre || ''
+                      const saludo = nombre ? `Hola ${nombre}! ` : 'Hola! '
+                      const texto = encodeURIComponent(`${saludo}Te mando nuestro catálogo completo:\n${base}`)
+                      if (l.telefono) {
+                        window.open(`https://wa.me/${toWANumber(l.telefono)}?text=${texto}`, '_blank')
+                      } else {
+                        window.open(`https://wa.me/?text=${texto}`, '_blank')
+                      }
+                    }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-violet/10 border border-violet/30 text-violet text-xs font-semibold hover:bg-violet/20 transition-colors cursor-pointer">
+                      <MessageCircle size={11} /> Catálogo
                     </button>
                   </div>
 
