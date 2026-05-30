@@ -11,7 +11,7 @@ const nav = [
   { href: '/gastos',    label: 'Gastos',      icon: Receipt,         accent: false },
   { href: '/productos', label: 'Productos',   icon: Package,         accent: false },
   { href: '/director',  label: 'Director OS', icon: Gauge,           accent: true  },
-  { href: '/catalogo',  label: 'Ver catálogo', icon: BookOpen,        accent: true  },
+  { href: '/galeria',   label: 'Ver catálogo', icon: BookOpen,        accent: true  },
 ]
 
 export default function Sidebar() {
