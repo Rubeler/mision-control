@@ -25,6 +25,39 @@ const IMAGE_SLIDES = [
 
 const TOTAL = IMAGE_SLIDES.length // 24
 
+// Slide de cierre con datos reales de Debuenamadera (reemplaza bedroom-10)
+const SlideCierre = () => (
+  <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#F5F0E8', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}>
+    {/* Marco navy */}
+    <div style={{ position: 'absolute', inset: 0, border: '22px solid #1A2744', pointerEvents: 'none' }} />
+    {/* Contenido centrado */}
+    <div style={{ textAlign: 'center', padding: '0 10%' }}>
+      <h2 style={{ fontFamily: FONT, fontSize: 'clamp(22px, 4vw, 48px)', fontWeight: 400, fontStyle: 'italic', color: '#1A2744', margin: '0 0 4%', lineHeight: 1.2 }}>
+        Calidez, orden y diseño atemporal.
+      </h2>
+      <p style={{ fontFamily: SANS, fontSize: 'clamp(12px, 1.8vw, 20px)', color: '#4A5568', margin: '0 0 8%', lineHeight: 1.6 }}>
+        Consultanos para configurar tu espacio<br />con la nobleza del pino natural macizo.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+        <p style={{ fontFamily: SANS, fontSize: 'clamp(11px, 1.5vw, 17px)', color: '#1A2744', fontWeight: 600, margin: 0 }}>
+          WhatsApp: 11 3644-9059
+        </p>
+        <p style={{ fontFamily: SANS, fontSize: 'clamp(10px, 1.3vw, 15px)', color: '#4A5568', margin: 0 }}>
+          infotiendademuebles@gmail.com
+        </p>
+      </div>
+      <div style={{ marginTop: '8%', paddingTop: '4%', borderTop: '1px solid #C8B89A' }}>
+        <p style={{ fontFamily: FONT, fontSize: 'clamp(13px, 1.8vw, 20px)', color: '#1A2744', fontWeight: 600, margin: 0 }}>
+          Debuenamadera · Muebles en Madera de Pino
+        </p>
+        <p style={{ fontFamily: SANS, fontSize: 'clamp(9px, 1.1vw, 13px)', color: '#9CA3AF', margin: '4px 0 0' }}>
+          Av Vergara 2304, Hurlingham · Buenos Aires
+        </p>
+      </div>
+    </div>
+  </div>
+)
+
 export default function GaleriaPage() {
   const [current, setCurrent]   = useState(0)
   const [copiado, setCopiado]   = useState(false)
@@ -90,11 +123,15 @@ export default function GaleriaPage() {
         <div style={{ width: '100%', maxWidth: '960px', position: 'relative' }}>
           {/* Slide */}
           <div style={{ borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 30px rgba(44,36,21,0.12)', backgroundColor: BG }}>
-            <img
-              src={IMAGE_SLIDES[current].src}
-              alt={IMAGE_SLIDES[current].alt}
-              style={{ width: '100%', display: 'block' }}
-            />
+            {current === TOTAL - 1 ? (
+              <SlideCierre />
+            ) : (
+              <img
+                src={IMAGE_SLIDES[current].src}
+                alt={IMAGE_SLIDES[current].alt}
+                style={{ width: '100%', display: 'block' }}
+              />
+            )}
           </div>
 
           {/* Nav arrows */}
