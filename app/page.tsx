@@ -14,107 +14,106 @@ const CANAL_COLORS: Record<string, string> = {
 }
 
 interface KPIs {
-  totalVendido: number
-  cantVentas: number
-  ticketPromedio: number
-  margenPromedio: number
-  utilidadBruta: number
-  ventasPresencial: number
-  ventasWhatsapp: number
-  ventasIG: number
-  sinCanal: number
-  gastosFijos: number
-  gastosVariables: number
-  totalGastos: number
-  utilidadNeta: number
-  margenNeto: number
+  totalVendido: number; cantVentas: number; ticketPromedio: number
+  margenPromedio: number; utilidadBruta: number
+  ventasPresencial: number; ventasWhatsapp: number; ventasIG: number; sinCanal: number
+  gastosFijos: number; gastosVariables: number; totalGastos: number
+  utilidadNeta: number; margenNeto: number
 }
 
 export interface VentasMes   { mes: string; ventas: number; gastos: number }
 export interface VentasCanal { canal: string; valor: number; color: string }
 export interface TopProd     { producto: string; ventas: number; margen: number; count: number }
 
+type RawVenta = { precio_venta: number; margen_pct: number; utilidad_bruta: number; canal: string; mes: string; producto: string }
+type RawGasto = { tipo: string; monto: number; mes: string }
+
 const fmt = (n: number) => '$' + Math.abs(n).toLocaleString('es-AR')
 
+function calcularKPIs(v: RawVenta[], g: RawGasto[]) {
+  const totalVendido    = v.reduce((s, x) => s + (x.precio_venta || 0), 0)
+  const cantVentas      = v.length
+  const utilidadBruta   = v.reduce((s, x) => s + (x.utilidad_bruta || 0), 0)
+  const margenPromedio  = cantVentas ? v.reduce((s, x) => s + (x.margen_pct || 0), 0) / cantVentas : 0
+  const gastosFijos     = g.filter(x => x.tipo === 'Fijo').reduce((s, x) => s + x.monto, 0)
+  const gastosVariables = g.filter(x => x.tipo === 'Variable').reduce((s, x) => s + x.monto, 0)
+  const totalGastos     = gastosFijos + gastosVariables
+  const utilidadNeta    = utilidadBruta - totalGastos
+  return {
+    totalVendido, cantVentas,
+    ticketPromedio: cantVentas ? totalVendido / cantVentas : 0,
+    margenPromedio, utilidadBruta,
+    ventasPresencial: v.filter(x => x.canal === 'Presencial').reduce((s, x) => s + x.precio_venta, 0),
+    ventasWhatsapp:   v.filter(x => x.canal === 'WhatsApp').reduce((s, x) => s + x.precio_venta, 0),
+    ventasIG:         v.filter(x => x.canal === 'IG').reduce((s, x) => s + x.precio_venta, 0),
+    sinCanal:         v.filter(x => !x.canal).reduce((s, x) => s + x.precio_venta, 0),
+    gastosFijos, gastosVariables, totalGastos, utilidadNeta,
+    margenNeto: totalVendido ? utilidadNeta / totalVendido : 0,
+  }
+}
+
 export default function Dashboard() {
+  const [rawVentas, setRawVentas] = useState<RawVenta[]>([])
+  const [rawGastos, setRawGastos] = useState<RawGasto[]>([])
+  const [mesFiltro, setMesFiltro] = useState<string | null>(null)
   const [kpis, setKpis]           = useState<KPIs | null>(null)
   const [chartMeses, setChartMeses]   = useState<VentasMes[]>([])
   const [chartCanal, setChartCanal]   = useState<VentasCanal[]>([])
   const [chartProds, setChartProds]   = useState<TopProd[]>([])
+  const [mesesDisponibles, setMesesDisponibles] = useState<string[]>([])
 
+  // Carga inicial
   useEffect(() => {
-    const cargar = async () => {
-      const [{ data: ventas }, { data: gastos }] = await Promise.all([
-        supabase.from('ventas').select('precio_venta, margen_pct, utilidad_bruta, canal, mes, producto'),
-        supabase.from('gastos').select('tipo, monto, mes')
-      ])
-
-      const v = ventas || []
-      const g = gastos || []
-
-      const totalVendido   = v.reduce((s, x) => s + (x.precio_venta || 0), 0)
-      const cantVentas     = v.length
-      const utilidadBruta  = v.reduce((s, x) => s + (x.utilidad_bruta || 0), 0)
-      const margenPromedio = cantVentas ? v.reduce((s, x) => s + (x.margen_pct || 0), 0) / cantVentas : 0
-      const gastosFijos    = g.filter(x => x.tipo === 'Fijo').reduce((s, x) => s + x.monto, 0)
-      const gastosVariables= g.filter(x => x.tipo === 'Variable').reduce((s, x) => s + x.monto, 0)
-      const totalGastos    = gastosFijos + gastosVariables
-      const utilidadNeta   = utilidadBruta - totalGastos
-
-      setKpis({
-        totalVendido, cantVentas,
-        ticketPromedio: cantVentas ? totalVendido / cantVentas : 0,
-        margenPromedio, utilidadBruta,
-        ventasPresencial: v.filter(x => x.canal === 'Presencial').reduce((s, x) => s + x.precio_venta, 0),
-        ventasWhatsapp:   v.filter(x => x.canal === 'WhatsApp').reduce((s, x) => s + x.precio_venta, 0),
-        ventasIG:         v.filter(x => x.canal === 'IG').reduce((s, x) => s + x.precio_venta, 0),
-        sinCanal:         v.filter(x => !x.canal).reduce((s, x) => s + x.precio_venta, 0),
-        gastosFijos, gastosVariables, totalGastos, utilidadNeta,
-        margenNeto: totalVendido ? utilidadNeta / totalVendido : 0
-      })
-
-      // --- Chart: Ventas vs Gastos por mes ---
-      const vMap: Record<string, number> = {}
-      const gMap: Record<string, number> = {}
-      v.forEach(x => { if (x.mes) vMap[x.mes] = (vMap[x.mes] || 0) + (x.precio_venta || 0) })
-      g.forEach(x => { if (x.mes) gMap[x.mes] = (gMap[x.mes] || 0) + (x.monto || 0) })
-      const mesesActivos = new Set([...Object.keys(vMap), ...Object.keys(gMap)])
-      setChartMeses(MESES_ORDER.filter(m => mesesActivos.has(m)).map(m => ({
-        mes: m, ventas: vMap[m] || 0, gastos: gMap[m] || 0
-      })))
-
-      // --- Chart: Ventas por canal ---
-      const cMap: Record<string, number> = {}
-      v.forEach(x => {
-        const c = x.canal || 'Sin canal'
-        cMap[c] = (cMap[c] || 0) + (x.precio_venta || 0)
-      })
-      setChartCanal(Object.entries(cMap).filter(([,val]) => val > 0).map(([canal, valor]) => ({
-        canal, valor, color: CANAL_COLORS[canal] || '#888899'
-      })))
-
-      // --- Chart: Top 5 productos ---
-      const pMap: Record<string, { total: number; count: number; margen: number; nombre: string }> = {}
-      v.forEach(x => {
-        if (!x.producto) return
-        const key = x.producto.trim().toLowerCase()
-        if (!pMap[key]) pMap[key] = { total: 0, count: 0, margen: 0, nombre: x.producto.trim() }
-        pMap[key].total  += x.precio_venta || 0
-        pMap[key].count  += 1
-        pMap[key].margen += x.margen_pct || 0
-      })
-      setChartProds(
-        Object.values(pMap)
-          .map(({ nombre, total, count, margen }) => ({
-            producto: nombre, ventas: total, count,
-            margen: count > 0 ? (margen / count) * 100 : 0
-          }))
-          .sort((a, b) => b.ventas - a.ventas)
-          .slice(0, 5)
-      )
-    }
-    cargar()
+    Promise.all([
+      supabase.from('ventas').select('precio_venta, margen_pct, utilidad_bruta, canal, mes, producto'),
+      supabase.from('gastos').select('tipo, monto, mes')
+    ]).then(([{ data: v }, { data: g }]) => {
+      setRawVentas(v || [])
+      setRawGastos(g || [])
+      const meses = new Set([...(v || []).map(x => x.mes), ...(g || []).map(x => x.mes)].filter(Boolean))
+      setMesesDisponibles(MESES_ORDER.filter(m => meses.has(m)))
+    })
   }, [])
+
+  // Recalcula cuando cambia filtro o datos
+  useEffect(() => {
+    if (!rawVentas.length && !rawGastos.length) return
+    const v = mesFiltro ? rawVentas.filter(x => x.mes === mesFiltro) : rawVentas
+    const g = mesFiltro ? rawGastos.filter(x => x.mes === mesFiltro) : rawGastos
+
+    setKpis(calcularKPIs(v, g))
+
+    // Chart ventas vs gastos — siempre muestra todos los meses
+    const vMap: Record<string, number> = {}
+    const gMap: Record<string, number> = {}
+    rawVentas.forEach(x => { if (x.mes) vMap[x.mes] = (vMap[x.mes] || 0) + (x.precio_venta || 0) })
+    rawGastos.forEach(x => { if (x.mes) gMap[x.mes] = (gMap[x.mes] || 0) + (x.monto || 0) })
+    const mesesActivos = new Set([...Object.keys(vMap), ...Object.keys(gMap)])
+    setChartMeses(MESES_ORDER.filter(m => mesesActivos.has(m)).map(m => ({
+      mes: m, ventas: vMap[m] || 0, gastos: gMap[m] || 0
+    })))
+
+    // Canal donut — filtrado
+    const cMap: Record<string, number> = {}
+    v.forEach(x => { const c = x.canal || 'Sin canal'; cMap[c] = (cMap[c] || 0) + (x.precio_venta || 0) })
+    setChartCanal(Object.entries(cMap).filter(([,val]) => val > 0).map(([canal, valor]) => ({
+      canal, valor, color: CANAL_COLORS[canal] || '#888899'
+    })))
+
+    // Top productos — filtrado
+    const pMap: Record<string, { total: number; count: number; margen: number; nombre: string }> = {}
+    v.forEach(x => {
+      if (!x.producto) return
+      const key = x.producto.trim().toLowerCase()
+      if (!pMap[key]) pMap[key] = { total: 0, count: 0, margen: 0, nombre: x.producto.trim() }
+      pMap[key].total  += x.precio_venta || 0
+      pMap[key].count  += 1
+      pMap[key].margen += x.margen_pct || 0
+    })
+    setChartProds(Object.values(pMap).map(({ nombre, total, count, margen }) => ({
+      producto: nombre, ventas: total, count, margen: count > 0 ? (margen / count) * 100 : 0
+    })).sort((a, b) => b.ventas - a.ventas).slice(0, 5))
+  }, [rawVentas, rawGastos, mesFiltro])
 
   if (!kpis) return (
     <div className="flex items-center justify-center h-64">
@@ -124,19 +123,52 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-mono text-xl font-bold text-muted">Dashboard</h2>
-        <p className="label mt-0.5">Resumen del negocio · 2026</p>
+      {/* Header + selector de mes */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-mono text-xl font-bold text-muted">Dashboard</h2>
+            <p className="label mt-0.5">
+              {mesFiltro ? `${mesFiltro} 2026` : 'Resumen del negocio · 2026'}
+            </p>
+          </div>
+          {mesFiltro && (
+            <button onClick={() => setMesFiltro(null)}
+              className="text-xs text-dim hover:text-muted border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-cyan/30 transition-colors">
+              Ver año completo
+            </button>
+          )}
+        </div>
+
+        {/* Selector de mes */}
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setMesFiltro(null)}
+            className={`px-3 py-1.5 rounded-full text-xs font-mono font-semibold border transition-colors cursor-pointer ${
+              !mesFiltro ? 'bg-cyan/10 border-cyan/40 text-cyan' : 'bg-transparent border-border text-dim hover:text-muted hover:border-border/80'
+            }`}>
+            Todos
+          </button>
+          {mesesDisponibles.map(m => (
+            <button key={m} onClick={() => setMesFiltro(m)}
+              className={`px-3 py-1.5 rounded-full text-xs font-mono font-semibold border transition-colors cursor-pointer ${
+                mesFiltro === m
+                  ? 'bg-lime/10 border-lime/40 text-lime'
+                  : 'bg-transparent border-border text-dim hover:text-muted hover:border-border/80'
+              }`}>
+              {m}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* KPIs principales */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: 'Total Vendido',   value: fmt(kpis.totalVendido),                     sub: 'año 2026',           icon: TrendingUp,  color: 'cyan' },
-          { label: 'Cant. Ventas',    value: kpis.cantVentas.toString(),                  sub: 'registros',          icon: ShoppingBag, color: 'lime' },
-          { label: 'Ticket Promedio', value: fmt(kpis.ticketPromedio),                    sub: 'por venta',          icon: ShoppingBag, color: 'cyan' },
-          { label: 'Margen Promedio', value: `${(kpis.margenPromedio*100).toFixed(1)}%`,  sub: 'sobre precio venta', icon: Percent,     color: 'violet' },
-          { label: 'Utilidad Bruta',  value: fmt(kpis.utilidadBruta),                     sub: 'antes de gastos',    icon: DollarSign,  color: 'lime' },
+          { label: 'Total Vendido',   value: fmt(kpis.totalVendido),                    sub: mesFiltro || 'año 2026',     icon: TrendingUp,  color: 'cyan' },
+          { label: 'Cant. Ventas',    value: kpis.cantVentas.toString(),                 sub: 'registros',                 icon: ShoppingBag, color: 'lime' },
+          { label: 'Ticket Promedio', value: fmt(kpis.ticketPromedio),                   sub: 'por venta',                 icon: ShoppingBag, color: 'cyan' },
+          { label: 'Margen Promedio', value: `${(kpis.margenPromedio*100).toFixed(1)}%`, sub: 'sobre precio venta',        icon: Percent,     color: 'violet' },
+          { label: 'Utilidad Bruta',  value: fmt(kpis.utilidadBruta),                    sub: 'antes de gastos',           icon: DollarSign,  color: 'lime' },
         ].map(({ label, value, sub, icon: Icon, color }) => {
           const c = color === 'cyan' ? { text:'text-cyan', border:'border-cyan/30', glow:'glow-cyan', bg:'bg-cyan/10' }
                   : color === 'lime' ? { text:'text-lime', border:'border-lime/30', glow:'glow-lime', bg:'bg-lime/10' }
@@ -158,7 +190,7 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2"><VentasChart data={chartMeses} /></div>
+        <div className="lg:col-span-2"><VentasChart data={chartMeses} mesResaltado={mesFiltro} /></div>
         <CanalDonut data={chartCanal} />
       </div>
 
@@ -166,10 +198,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <TopProductos data={chartProds} />
 
-        {/* KPIs Rentabilidad */}
         <div className="card space-y-3">
-          <p className="label">Rentabilidad</p>
-
+          <p className="label">Rentabilidad {mesFiltro ? `· ${mesFiltro}` : ''}</p>
           <div className="space-y-2">
             {[
               { label: 'Ventas Presencial', value: fmt(kpis.ventasPresencial), color: 'text-cyan' },
@@ -182,12 +212,11 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-
           <div className="border-t border-border pt-3 space-y-2">
             {[
-              { label: 'Gastos fijos',    value: fmt(kpis.gastosFijos),    color: 'text-violet' },
-              { label: 'Gastos variables',value: fmt(kpis.gastosVariables), color: 'text-violet' },
-              { label: 'Total gastos',    value: fmt(kpis.totalGastos),    color: 'text-violet' },
+              { label: 'Gastos fijos',     value: fmt(kpis.gastosFijos),     color: 'text-violet' },
+              { label: 'Gastos variables', value: fmt(kpis.gastosVariables), color: 'text-violet' },
+              { label: 'Total gastos',     value: fmt(kpis.totalGastos),     color: 'text-violet' },
             ].map(r => (
               <div key={r.label} className="flex justify-between text-sm">
                 <span className="text-dim">{r.label}</span>
@@ -195,7 +224,6 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-
           <div className="border-t border-border pt-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-dim">Utilidad Neta</span>
