@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageCircle, Share2, Download } from 'lucide-react'
 
 const STORE_WA = process.env.NEXT_PUBLIC_STORE_WHATSAPP || '5491136464905'
 
@@ -26,7 +26,29 @@ const IMAGE_SLIDES = [
 const TOTAL = IMAGE_SLIDES.length // 24
 
 export default function GaleriaPage() {
-  const [current, setCurrent] = useState(0)
+  const [current, setCurrent]   = useState(0)
+  const [copiado, setCopiado]   = useState(false)
+
+  const compartirGaleria = () => {
+    const url = window.location.origin + '/galeria'
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    })
+  }
+
+  const compartirSlide = () => {
+    const url = window.location.origin + '/galeria'
+    const msg = encodeURIComponent(`Mirá nuestra colección de muebles:\n${url}`)
+    window.open(`https://wa.me/${STORE_WA}?text=${msg}`, '_blank')
+  }
+
+  const descargarSlide = () => {
+    const link = document.createElement('a')
+    link.href = IMAGE_SLIDES[current].src
+    link.download = `debuenamadera-slide-${current + 1}.png`
+    link.click()
+  }
 
   const prev = useCallback(() => setCurrent(c => Math.max(0, c - 1)), [])
   const next = useCallback(() => setCurrent(c => Math.min(TOTAL - 1, c + 1)), [])
@@ -49,11 +71,18 @@ export default function GaleriaPage() {
           <p style={{ fontFamily: SANS, fontSize: '10px', color: LINE, letterSpacing: '0.15em', textTransform: 'uppercase', margin: 0 }}>Colección</p>
           <h1 style={{ fontFamily: FONT, fontSize: '20px', fontWeight: 400, color: DARK, margin: '2px 0 0' }}>Debuenamadera</h1>
         </div>
-        <a href={`https://wa.me/${STORE_WA}?text=${encodeURIComponent('Hola! Vi el catálogo y quiero consultar.')}`}
-          target="_blank" rel="noopener noreferrer"
-          style={{ backgroundColor: '#25D366', color: '#fff', borderRadius: '9999px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <MessageCircle size={14} /> Consultá
-        </a>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* Compartir link */}
+          <button onClick={compartirGaleria}
+            style={{ backgroundColor: copiado ? '#2C2415' : 'transparent', color: copiado ? '#fff' : DARK, border: `1px solid ${LINE}`, borderRadius: '9999px', padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SANS, transition: 'all 0.2s' }}>
+            <Share2 size={13} /> {copiado ? '¡Link copiado!' : 'Compartir'}
+          </button>
+          {/* WhatsApp */}
+          <button onClick={compartirSlide}
+            style={{ backgroundColor: '#25D366', color: '#fff', border: 'none', borderRadius: '9999px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SANS }}>
+            <MessageCircle size={14} /> Consultá
+          </button>
+        </div>
       </div>
 
       {/* Slide area */}
@@ -90,6 +119,10 @@ export default function GaleriaPage() {
           <p style={{ fontFamily: SANS, fontSize: '12px', color: MID, margin: 0 }}>
             {current + 1} / {TOTAL}
           </p>
+          <button onClick={descargarSlide}
+            style={{ backgroundColor: 'transparent', color: MID, border: `1px solid ${LINE}`, borderRadius: '9999px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SANS }}>
+            <Download size={12} /> Descargar imagen
+          </button>
         </div>
       </div>
 
