@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
@@ -10,6 +10,7 @@ const nav = [
   { href: '/leads',     label: 'Leads CRM',   icon: Users,           accent: false },
   { href: '/gastos',    label: 'Gastos',      icon: Receipt,         accent: false },
   { href: '/productos', label: 'Productos',   icon: Package,         accent: false },
+  { href: '/guiones',   label: 'Guiones',     icon: MessageSquare,   accent: false },
   { href: '/director',  label: 'Director OS', icon: Gauge,           accent: true  },
   { href: '/galeria',   label: 'Ver catálogo', icon: BookOpen,        accent: true  },
 ]
