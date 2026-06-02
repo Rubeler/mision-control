@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m 'docs: agregar backlog módulo guiones de venta *)",
+      "PowerShell(npx @puppeteer/browsers install chrome-headless-shell@131.0.6778.85 --path \"C:\\\\Users\\\\Ruben\\\\.cache\\\\hyperframes\\\\chrome\" 2>&1)"
+    ]
+  }
+}
