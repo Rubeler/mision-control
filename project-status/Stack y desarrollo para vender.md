@@ -470,23 +470,62 @@ alter table productos enable row level security;
 
 ### 🟢 OPCIÓN B — Instalación CON bot de WhatsApp
 
-**Tiempo total: ~3 horas** (1h la app + 2h el bot)
+**Tiempo total: ~3 horas**  
+13 pasos en orden. Los primeros 7 son idénticos a la Opción A.
 
-Hacer todos los pasos de la Opción A primero. Luego:
+#### Paso 1 — Crear cuenta en Supabase (base de datos)
+1. Ir a [supabase.com](https://supabase.com) → crear cuenta con Gmail del cliente
+2. Clic en "New Project" → elegir nombre (ej: `muebleria-el-pino`) → región `South America (São Paulo)` → crear
+3. Esperar ~2 minutos
+4. Guardar: `Project URL` y `anon public key` (están en Settings → API)
+
+#### Paso 2 — Crear las tablas en Supabase
+1. Panel de Supabase → SQL Editor → New Query
+2. Pegar y ejecutar el mismo SQL completo del Paso 2 de la Opción A (tablas ventas, leads, gastos, productos + políticas RLS)
+
+#### Paso 3 — Crear cuenta en Vercel (hosting)
+1. Ir a [vercel.com](https://vercel.com) → crear cuenta con Gmail del cliente
+2. Conectar con GitHub (crear cuenta si no tiene)
+
+#### Paso 4 — Copiar el repositorio base
+1. En GitHub → Fork del repo base `mision-control` → crear repo propio del cliente
+2. En tu PC: clonar el nuevo repo, cambiar los textos del cliente:
+   - `components/layout/Sidebar.tsx` → nombre del negocio
+   - `components/layout/Navbar.tsx` → nombre del dueño
+   - `app/layout.tsx` → título de la app
+
+#### Paso 5 — Deploy en Vercel
+1. Vercel → "Add New Project" → importar el repo del cliente desde GitHub
+2. En "Environment Variables" agregar solo las de Supabase por ahora:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL      = [URL del proyecto Supabase]
+   NEXT_PUBLIC_SUPABASE_ANON_KEY = [anon key de Supabase]
+   ```
+3. Clic en Deploy → esperar ~2 minutos
+4. URL queda como: `https://[nombre-del-repo].vercel.app`
+
+#### Paso 6 — URL personalizada (opcional)
+- Por defecto queda `nombre-del-repo.vercel.app` — funciona y es gratis
+- Si el cliente quiere dominio propio (`app.muebleriaxyz.com`): Vercel → Domains → agregar dominio
+
+#### Paso 7 — Carga inicial de datos
+1. Entrar a la app con la URL
+2. `/productos` → cargar los productos del cliente
+3. `/gastos` → cargar los gastos fijos mensuales
 
 #### Paso 8 — Crear la app en Meta Developers
-1. Ir a [developers.facebook.com](https://developers.facebook.com) → entrar con el Facebook del cliente (o crear cuenta si no tiene)
+1. Ir a [developers.facebook.com](https://developers.facebook.com) → entrar con el Facebook del cliente (crear cuenta si no tiene)
 2. "Create App" → tipo: Business → nombre: "[Negocio] WA Bot"
-3. En el dashboard de la app → "Add Products" → buscar WhatsApp → "Set Up"
+3. En el dashboard → "Add Products" → buscar WhatsApp → "Set Up"
 
 #### Paso 9 — Configurar el número de WhatsApp
 1. En el panel de WhatsApp → "Getting Started"
-2. Si el cliente tiene un número de negocio propio: "Add phone number" → verificar con código SMS
-3. Si no tiene número propio todavía: usar el número de prueba de Meta (funciona, pero solo puede enviar a números verificados manualmente)
-4. Copiar el **Phone number ID** — lo vas a necesitar
+2. Si tiene número de negocio propio: "Add phone number" → verificar con código SMS
+3. Si no tiene número propio: usar el número de prueba de Meta (solo puede enviar a números verificados manualmente)
+4. Copiar el **Phone number ID** — lo vas a necesitar en el Paso 12
 
 #### Paso 10 — Generar el token permanente
-1. En Meta Business Manager → Configuración → Usuarios del sistema → "Agregar"
+1. Meta Business Manager → Configuración → Usuarios del sistema → "Agregar"
 2. Crear usuario del sistema con rol Admin → asignar la app → asignar el número de WhatsApp
 3. Generar token → permisos: `whatsapp_business_messaging` + `whatsapp_business_management`
 4. Copiar el token (empieza con EAA...) — **guardarlo bien, solo se muestra una vez**
@@ -498,12 +537,12 @@ Hacer todos los pasos de la Opción A primero. Luego:
 4. Clic en "Verify and Save"
 5. Suscribir al campo: `messages`
 
-#### Paso 12 — Agregar variables de entorno en Vercel
-En Vercel → Settings → Environment Variables → agregar:
+#### Paso 12 — Agregar las variables de WhatsApp en Vercel
+Vercel → Settings → Environment Variables → agregar:
 ```
-WHATSAPP_TOKEN        = [token que copiaste en el paso 10]
-WHATSAPP_PHONE_ID     = [Phone number ID del paso 9]
-WHATSAPP_VERIFY_TOKEN = [la palabra clave del paso 11]
+WHATSAPP_TOKEN        = [token del Paso 10]
+WHATSAPP_PHONE_ID     = [Phone number ID del Paso 9]
+WHATSAPP_VERIFY_TOKEN = [palabra clave del Paso 11]
 ```
 Hacer redeploy en Vercel para que tome las nuevas variables.
 
