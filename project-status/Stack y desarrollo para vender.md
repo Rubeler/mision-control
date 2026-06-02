@@ -319,38 +319,215 @@ const nextConfig = {
 
 ---
 
-## Cómo replicar para un nuevo cliente
+## Guía completa de instalación para un nuevo cliente
 
-### Paso 1 — Clonar el repo
-```bash
-git clone https://github.com/[repo]/mision-control.git nuevo-cliente
-cd nuevo-cliente
-npm install
+### ✅ Qué pedirle al cliente ANTES de empezar
+
+Antes de tocar código, el cliente tiene que darte estos datos. Sin ellos no se puede instalar.
+
+**Siempre (obligatorio):**
+| Dato | Para qué sirve | Ejemplo |
+|------|---------------|---------|
+| Nombre del negocio | Aparece en el sidebar y el título de la app | "Mueblería El Pino" |
+| Nombre del dueño | Aparece en el saludo del navbar | "Carlos" |
+| Listado de productos (nombre, costo, precio) | Carga inicial en la base de datos | Excel o lista escrita |
+| Listado de gastos fijos mensuales | Carga inicial de gastos | Monotributo $X, Luz $Y... |
+
+**Solo si quieren el bot de WhatsApp:**
+| Dato | Para qué sirve |
+|------|---------------|
+| Número de WhatsApp del negocio | El número que los clientes van a escribir |
+| Acceso a Meta Business Manager | Para crear la app del bot |
+| ¿Tienen número dedicado de negocio o usan el personal? | Si usan el personal, hay que hablar antes |
+
+> **Nota importante sobre el número de WhatsApp:** el bot se conecta al número que los clientes escriben. Si el cliente usa su número personal de WhatsApp para el negocio, no se puede usar directamente — se necesita un número aparte o un chip dedicado para el negocio.
+
+---
+
+### 🔵 OPCIÓN A — Instalación SIN bot de WhatsApp
+
+**Tiempo total: ~1 hora**
+
+#### Paso 1 — Crear cuenta en Supabase (base de datos)
+1. Ir a [supabase.com](https://supabase.com) → crear cuenta con Gmail del cliente
+2. Clic en "New Project" → elegir nombre (ej: `muebleria-el-pino`) → elegir región `South America (São Paulo)` → crear
+3. Esperar ~2 minutos que termine de crear
+4. Guardar: `Project URL` y `anon public key` (están en Settings → API)
+
+#### Paso 2 — Crear las tablas en Supabase
+1. En el panel de Supabase → SQL Editor → New Query
+2. Pegar y ejecutar este SQL completo:
+
+```sql
+-- Tabla ventas
+create table ventas (
+  id bigserial primary key,
+  fecha date not null,
+  mes text,
+  producto text not null,
+  canal text not null,
+  precio_venta numeric not null,
+  costo numeric,
+  margen_pct numeric,
+  utilidad_bruta numeric,
+  created_at timestamptz default now()
+);
+
+-- Tabla leads
+create table leads (
+  id bigserial primary key,
+  fecha date not null,
+  nombre text,
+  producto text not null,
+  canal text not null,
+  estado text not null default 'Nuevo',
+  motivo text,
+  telefono text,
+  notas text,
+  created_at timestamptz default now()
+);
+
+-- Tabla gastos
+create table gastos (
+  id bigserial primary key,
+  mes text not null,
+  tipo text not null,
+  categoria text not null,
+  monto numeric not null,
+  created_at timestamptz default now()
+);
+
+-- Tabla productos
+create table productos (
+  id uuid default gen_random_uuid() primary key,
+  producto text not null,
+  costo numeric not null,
+  precio_venta numeric not null,
+  margen_pct numeric,
+  created_at timestamptz default now()
+);
+
+-- Políticas de acceso (ejecutar cada línea por separado si da error en bloque)
+create policy "Public read"  on ventas   for select using (true);
+create policy "Anon insert"  on ventas   for insert with check (true);
+create policy "Anon update"  on ventas   for update using (true);
+create policy "Anon delete"  on ventas   for delete using (true);
+
+create policy "Public read"  on leads    for select using (true);
+create policy "Anon insert"  on leads    for insert with check (true);
+create policy "Anon update"  on leads    for update using (true);
+create policy "Anon delete"  on leads    for delete using (true);
+
+create policy "Public read"  on gastos   for select using (true);
+create policy "Anon insert"  on gastos   for insert with check (true);
+create policy "Anon delete"  on gastos   for delete using (true);
+
+create policy "Public read"  on productos for select using (true);
+create policy "Anon insert"  on productos for insert with check (true);
+create policy "Anon update"  on productos for update using (true);
+create policy "Anon delete"  on productos for delete using (true);
+
+-- Habilitar RLS en todas las tablas
+alter table ventas    enable row level security;
+alter table leads     enable row level security;
+alter table gastos    enable row level security;
+alter table productos enable row level security;
 ```
 
-### Paso 2 — Nuevo Supabase
-1. Crear proyecto en supabase.com (gratis)
-2. Ejecutar los 4 `CREATE TABLE` de arriba en el SQL Editor
-3. Aplicar las políticas RLS
-4. Copiar URL y anon key
+#### Paso 3 — Crear cuenta en Vercel (hosting)
+1. Ir a [vercel.com](https://vercel.com) → crear cuenta con Gmail del cliente
+2. Conectar con GitHub (si no tiene cuenta GitHub, crearla también)
 
-### Paso 3 — Personalizar (5 cambios)
-```
-components/layout/Sidebar.tsx  → línea 50: nombre del negocio
-components/layout/Navbar.tsx   → línea 20: nombre del dueño
-app/layout.tsx                 → <title>: nombre del negocio
-tailwind.config.ts             → colores hex si se quiere otro tema
-```
+#### Paso 4 — Copiar el repositorio base
+1. En GitHub → Fork del repo base `mision-control` → crear repo propio del cliente (ej: `muebleria-el-pino`)
+2. En tu PC: clonar el nuevo repo, cambiar los 4 textos del cliente:
+   - `components/layout/Sidebar.tsx` → nombre del negocio
+   - `components/layout/Navbar.tsx` → nombre del dueño
+   - `app/layout.tsx` → título de la app
 
-### Paso 4 — Variables de entorno
-Crear `.env.local` con los datos del nuevo Supabase + WhatsApp si aplica.
+#### Paso 5 — Deploy en Vercel
+1. En Vercel → "Add New Project" → importar el repo del cliente desde GitHub
+2. Antes de hacer deploy, en "Environment Variables" agregar:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL     = [URL del proyecto Supabase]
+   NEXT_PUBLIC_SUPABASE_ANON_KEY = [anon key de Supabase]
+   ```
+3. Clic en Deploy → esperar ~2 minutos
+4. La URL queda como: `https://[nombre-del-repo].vercel.app`
 
-### Paso 5 — Deploy
-```bash
-git remote set-url origin https://github.com/[nuevo-repo].git
-git push origin master
+#### Paso 6 — URL personalizada (opcional)
+- Por defecto queda `nombre-del-repo.vercel.app` — ya funciona y es gratis
+- Si el cliente quiere un dominio propio (`app.muebleriaxyz.com`): en Vercel → Domains → agregar dominio
+
+#### Paso 7 — Carga inicial de datos
+1. Entrar a la app con la URL
+2. Ir a `/productos` → cargar los productos del cliente uno a uno (o importar con Excel si se implementa esa función)
+3. Ir a `/gastos` → cargar los gastos fijos mensuales del cliente
+
+**¡Listo! La app está funcionando al 100%.**
+
+---
+
+### 🟢 OPCIÓN B — Instalación CON bot de WhatsApp
+
+**Tiempo total: ~3 horas** (1h la app + 2h el bot)
+
+Hacer todos los pasos de la Opción A primero. Luego:
+
+#### Paso 8 — Crear la app en Meta Developers
+1. Ir a [developers.facebook.com](https://developers.facebook.com) → entrar con el Facebook del cliente (o crear cuenta si no tiene)
+2. "Create App" → tipo: Business → nombre: "[Negocio] WA Bot"
+3. En el dashboard de la app → "Add Products" → buscar WhatsApp → "Set Up"
+
+#### Paso 9 — Configurar el número de WhatsApp
+1. En el panel de WhatsApp → "Getting Started"
+2. Si el cliente tiene un número de negocio propio: "Add phone number" → verificar con código SMS
+3. Si no tiene número propio todavía: usar el número de prueba de Meta (funciona, pero solo puede enviar a números verificados manualmente)
+4. Copiar el **Phone number ID** — lo vas a necesitar
+
+#### Paso 10 — Generar el token permanente
+1. En Meta Business Manager → Configuración → Usuarios del sistema → "Agregar"
+2. Crear usuario del sistema con rol Admin → asignar la app → asignar el número de WhatsApp
+3. Generar token → permisos: `whatsapp_business_messaging` + `whatsapp_business_management`
+4. Copiar el token (empieza con EAA...) — **guardarlo bien, solo se muestra una vez**
+
+#### Paso 11 — Configurar el webhook
+1. En la app de Meta → WhatsApp → Configuration → Webhook
+2. Callback URL: `https://[url-de-vercel].vercel.app/api/whatsapp`
+3. Verify Token: inventar una palabra clave (ej: `mitoken2026`) → guardarla
+4. Clic en "Verify and Save"
+5. Suscribir al campo: `messages`
+
+#### Paso 12 — Agregar variables de entorno en Vercel
+En Vercel → Settings → Environment Variables → agregar:
 ```
-Conectar en Vercel → cargar env vars → listo.
+WHATSAPP_TOKEN        = [token que copiaste en el paso 10]
+WHATSAPP_PHONE_ID     = [Phone number ID del paso 9]
+WHATSAPP_VERIFY_TOKEN = [la palabra clave del paso 11]
+```
+Hacer redeploy en Vercel para que tome las nuevas variables.
+
+#### Paso 13 — Probar el bot
+1. Desde el celular del cliente → escribir al número configurado
+2. El mensaje debe crear un nuevo lead en `/leads` dentro de la app
+3. El cliente debe recibir una respuesta automática
+
+**¡Bot funcionando!** Cada consulta de WhatsApp aparece automáticamente en el CRM.
+
+---
+
+## Tiempo estimado de entrega
+
+| Tarea | Tiempo |
+|-------|--------|
+| Crear Supabase + ejecutar SQL | 20 min |
+| Personalizar nombre y textos | 15 min |
+| Deploy en Vercel | 15 min |
+| Carga inicial de productos y gastos | 20 min |
+| **Total SIN bot** | **~1 hora** |
+| Configurar Meta Developers | +1 hora |
+| Webhook + token + pruebas | +1 hora |
+| **Total CON bot** | **~3 horas** |
 
 ---
 
