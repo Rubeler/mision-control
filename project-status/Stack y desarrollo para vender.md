@@ -438,12 +438,31 @@ alter table productos enable row level security;
 1. Ir a [vercel.com](https://vercel.com) → crear cuenta con Gmail del cliente
 2. Conectar con GitHub (si no tiene cuenta GitHub, crearla también)
 
-#### Paso 4 — Copiar el repositorio base
-1. En GitHub → Fork del repo base `mision-control` → crear repo propio del cliente (ej: `muebleria-el-pino`)
-2. En tu PC: clonar el nuevo repo, cambiar los 4 textos del cliente:
-   - `components/layout/Sidebar.tsx` → nombre del negocio
-   - `components/layout/Navbar.tsx` → nombre del dueño
-   - `app/layout.tsx` → título de la app
+#### Paso 4 — Descargar el código base a tu PC
+
+**Primero: instalar Git** (solo la primera vez en cada PC)
+- Ir a [git-scm.com](https://git-scm.com) → Download → instalar con opciones por defecto
+
+**Opción A (sin saber código) — Descarga directa como ZIP:**
+1. Ir a `https://github.com/Rubeler/mision-control`
+2. Click en el botón verde **"Code"** → **"Download ZIP"**
+3. Descomprimir el ZIP en el escritorio
+4. Abrir PowerShell o CMD dentro de esa carpeta → correr `npm install`
+
+**Opción B (recomendada) — Clonar con Git:**
+1. Abrir PowerShell o CMD
+2. Correr estos comandos uno por uno:
+   ```bash
+   git clone https://github.com/Rubeler/mision-control.git muebleria-el-pino
+   cd muebleria-el-pino
+   npm install
+   ```
+3. Esperar que termine `npm install` (~1-2 minutos)
+
+**Luego, cambiar los textos del cliente** (abrir los archivos con el Bloc de notas o VS Code):
+- `components/layout/Sidebar.tsx` → línea 50: nombre del negocio
+- `components/layout/Navbar.tsx` → línea 20: nombre del dueño
+- `app/layout.tsx` → `<title>`: nombre del negocio
 
 #### Paso 5 — Deploy en Vercel
 1. En Vercel → "Add New Project" → importar el repo del cliente desde GitHub
@@ -487,12 +506,31 @@ alter table productos enable row level security;
 1. Ir a [vercel.com](https://vercel.com) → crear cuenta con Gmail del cliente
 2. Conectar con GitHub (crear cuenta si no tiene)
 
-#### Paso 4 — Copiar el repositorio base
-1. En GitHub → Fork del repo base `mision-control` → crear repo propio del cliente
-2. En tu PC: clonar el nuevo repo, cambiar los textos del cliente:
-   - `components/layout/Sidebar.tsx` → nombre del negocio
-   - `components/layout/Navbar.tsx` → nombre del dueño
-   - `app/layout.tsx` → título de la app
+#### Paso 4 — Descargar el código base a tu PC
+
+**Primero: instalar Git** (solo la primera vez en cada PC)
+- Ir a [git-scm.com](https://git-scm.com) → Download → instalar con opciones por defecto
+
+**Opción rápida — Descarga como ZIP (sin saber código):**
+1. Ir a `https://github.com/Rubeler/mision-control`
+2. Click en el botón verde **"Code"** → **"Download ZIP"**
+3. Descomprimir el ZIP en el escritorio
+4. Abrir PowerShell o CMD dentro de esa carpeta → correr `npm install`
+
+**Opción recomendada — Clonar con Git:**
+1. Abrir PowerShell o CMD
+2. Correr estos comandos uno por uno:
+   ```bash
+   git clone https://github.com/Rubeler/mision-control.git muebleria-el-pino
+   cd muebleria-el-pino
+   npm install
+   ```
+3. Esperar que termine `npm install` (~1-2 minutos)
+
+**Luego, cambiar los textos del cliente** (abrir con Bloc de notas o VS Code):
+- `components/layout/Sidebar.tsx` → línea 50: nombre del negocio
+- `components/layout/Navbar.tsx` → línea 20: nombre del dueño
+- `app/layout.tsx` → `<title>`: nombre del negocio
 
 #### Paso 5 — Deploy en Vercel
 1. Vercel → "Add New Project" → importar el repo del cliente desde GitHub
