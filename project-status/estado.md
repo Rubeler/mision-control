@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 02/06/2026
+**Última actualización:** 04/06/2026
 
 ---
 
@@ -34,6 +34,11 @@
 - `/catalogo/madera` y `/catalogo/melamina`
 - `/catalogo/seleccion?ids=...`
 - `/galeria` → 24 slides con botones compartir/descargar
+
+### Seguridad y Login ⚠️ (subido 04/06/2026 - pendiente de verificación)
+- Login con Supabase Auth e interceptor por middleware.
+- Verificación de rol `'admin'` mediante consulta a base de datos en frontend (`Navbar` y `Sidebar`).
+- Subido a GitHub en la rama `master`. En producción (Vercel) el panel de administración no se visualiza tras iniciar sesión, requiere depuración.
 
 ---
 
