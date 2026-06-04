@@ -1,23 +1,38 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen, MessageSquare } from 'lucide-react'
-import { useState } from 'react'
+import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen, MessageSquare, ShieldCheck } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase-browser'
 
-const nav = [
-  { href: '/',          label: 'Dashboard',   icon: LayoutDashboard, accent: false },
-  { href: '/ventas',    label: 'Ventas',      icon: ShoppingCart,    accent: false },
-  { href: '/leads',     label: 'Leads CRM',   icon: Users,           accent: false },
-  { href: '/gastos',    label: 'Gastos',      icon: Receipt,         accent: false },
-  { href: '/productos', label: 'Productos',   icon: Package,         accent: false },
-  { href: '/guiones',   label: 'Guiones',     icon: MessageSquare,   accent: false },
-  { href: '/director',  label: 'Director OS', icon: Gauge,           accent: true  },
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL
+
+const NAV_BASE = [
+  { href: '/',          label: 'Dashboard',    icon: LayoutDashboard, accent: false },
+  { href: '/ventas',    label: 'Ventas',       icon: ShoppingCart,    accent: false },
+  { href: '/leads',     label: 'Leads CRM',    icon: Users,           accent: false },
+  { href: '/gastos',    label: 'Gastos',       icon: Receipt,         accent: false },
+  { href: '/productos', label: 'Productos',    icon: Package,         accent: false },
+  { href: '/guiones',   label: 'Guiones',      icon: MessageSquare,   accent: false },
+  { href: '/director',  label: 'Director OS',  icon: Gauge,           accent: true  },
   { href: '/galeria',   label: 'Ver catálogo', icon: BookOpen,        accent: true  },
 ]
 
+const NAV_ADMIN = { href: '/admin', label: 'Admin', icon: ShieldCheck, accent: true }
+
 export default function Sidebar() {
   const path = usePathname()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen]       = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsAdmin(user?.email === ADMIN_EMAIL)
+    })
+  }, [])
+
+  const nav = isAdmin ? [...NAV_BASE, NAV_ADMIN] : NAV_BASE
 
   const NavLinks = () => (
     <>
