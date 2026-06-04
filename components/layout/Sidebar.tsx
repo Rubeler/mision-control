@@ -5,8 +5,6 @@ import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge,
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL
-
 const NAV_BASE = [
   { href: '/',          label: 'Dashboard',    icon: LayoutDashboard, accent: false },
   { href: '/ventas',    label: 'Ventas',       icon: ShoppingCart,    accent: false },
@@ -28,7 +26,11 @@ export default function Sidebar() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsAdmin(user?.email === ADMIN_EMAIL)
+      if (user?.id) {
+        supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data }) => {
+          setIsAdmin(data?.role === 'admin')
+        })
+      }
     })
   }, [])
 

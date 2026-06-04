@@ -4,8 +4,6 @@ import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import { LogOut, ShieldCheck } from 'lucide-react'
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL
-
 export default function Navbar() {
   const [now, setNow]       = useState('')
   const [email, setEmail]   = useState('')
@@ -21,11 +19,19 @@ export default function Navbar() {
     return () => clearInterval(t)
   }, [])
 
+  const [isAdmin, setIsAdmin] = useState(false)
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) {
         setEmail(user.email)
         setNombre(user.email.split('@')[0])
+        // Obtener rol desde la tabla profiles
+        supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data }) => {
+          if (data?.role === 'admin') {
+            setIsAdmin(true)
+          }
+        })
       }
     })
   }, [])
@@ -35,8 +41,6 @@ export default function Navbar() {
     router.push('/login')
     router.refresh()
   }
-
-  const isAdmin = email === ADMIN_EMAIL
 
   return (
     <header data-admin className="hidden md:flex fixed top-0 left-56 right-0 h-14 bg-[#0D0D1A]/90 border-b border-border backdrop-blur-sm items-center justify-between px-6 z-30">
