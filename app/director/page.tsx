@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Zap, TrendingUp, TrendingDown } from 'lucide-react'
+import { Zap, TrendingUp, TrendingDown, Bell } from 'lucide-react'
 
 const MESES_NAMES = ['Ene','Feb','Mar','Abr','Mayo','Junio','Jul','Ago','Sep','Oct','Nov','Dic']
 
@@ -57,6 +57,7 @@ export default function DirectorPage() {
   const [ventas,  setVentas]  = useState<Venta[]>([])
   const [gastos,  setGastos]  = useState<Gasto[]>([])
   const [leads,   setLeads]   = useState<Lead[]>([])
+  const [productos, setProductos] = useState<{ id: string; producto: string; stock: number; alerta_critica: boolean }[]>([])
   const [loading, setLoading] = useState(true)
   const [mesFiltro, setMesFiltro] = useState<string | null>(null)
 
@@ -70,10 +71,12 @@ export default function DirectorPage() {
       supabase.from('ventas').select('id, fecha, mes, producto, precio_venta, margen_pct, utilidad_bruta, canal').order('fecha', { ascending: false }),
       supabase.from('gastos').select('id, mes, tipo, categoria, monto'),
       supabase.from('leads').select('id, fecha, estado, canal, producto, nombre').order('id', { ascending: false }),
-    ]).then(([{ data: v }, { data: g }, { data: l }]) => {
+      supabase.from('productos').select('id, producto, stock, alerta_critica'),
+    ]).then(([{ data: v }, { data: g }, { data: l }, { data: p }]) => {
       setVentas(v || [])
       setGastos(g || [])
       setLeads(l || [])
+      setProductos(p || [])
       setLoading(false)
     })
   }, [])
@@ -258,6 +261,27 @@ export default function DirectorPage() {
             </p>
           </div>
         </div>
+        
+        {/* Alertas de Stock Crítico */}
+        {productos.filter(p => p.alerta_critica && (p.stock ?? 0) === 0).length > 0 && (
+          <div className="mt-4 p-3 bg-red-400/10 border border-red-400/30 rounded-xl space-y-1.5">
+            <p className="text-xs font-mono font-bold text-red-400 flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              ALERTAS DE STOCK CRÍTICO:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {productos.filter(p => p.alerta_critica && (p.stock ?? 0) === 0).map(a => (
+                <span key={a.id} className="text-xs bg-red-400/20 text-red-400 px-2 py-0.5 rounded-lg border border-red-400/30 font-semibold flex items-center gap-1">
+                  <Bell size={10} className="fill-red-400 text-red-400" /> {a.producto} (Agotado)
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 pt-3 border-t border-border flex flex-wrap gap-4 text-xs text-dim">
           <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-violet inline-block" />{activos} oportunidades activas</span>
           <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-lime inline-block" />{ganados} leads ganados</span>

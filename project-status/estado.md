@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 04/06/2026
+**Última actualización:** 11/07/2026
 
 ---
 
@@ -15,11 +15,12 @@
 
 ### Core
 - Dashboard — KPIs anuales + selector de mes (filtra todos los KPIs y charts)
-- Ventas — CRUD completo + exportación Excel
+- Ventas — CRUD completo + exportación Excel (con descuento automático de stock de catálogo e indicador de stock en modal)
 - Gastos — CRUD completo + exportación Excel
 - Productos — CRUD + margen automático + exportación Excel
+- Control de Stock — CRUD de stock en `/stock` + carga automática de muebles base de proveedores + campanas de alerta crítica por producto + estilo de advertencia visual
 - Leads CRM — Kanban drag & drop + botón "Muebles" + botón "Catálogo"
-- Director OS — métricas ejecutivas + selector de mes Ene-Dic con ventas vs gastos desglosados
+- Director OS — métricas ejecutivas + selector de mes Ene-Dic con ventas vs gastos desglosados + sección de alertas críticas de stock
 - Guiones de Venta — calificación 7 preguntas + 3 plantillas seguimiento WhatsApp
 - Navbar — fecha en tiempo real
 

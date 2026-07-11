@@ -15,7 +15,7 @@ interface Venta {
   id: string; fecha: string; mes: string; producto: string
   precio_venta: number; margen_pct: number; utilidad_bruta: number; canal: string
 }
-interface Producto { id: string; producto: string; costo: number; precio_venta: number; margen_pct: number }
+interface Producto { id: string; producto: string; costo: number; precio_venta: number; margen_pct: number; stock?: number }
 
 type EditForm = {
   id: string; fecha: string; mes: string; producto: string
@@ -94,6 +94,16 @@ export default function VentasPage() {
   const guardar = async () => {
     if (!form.producto || !form.precio_venta) return
     setSaving(true)
+
+    // Descontar stock automáticamente si el producto coincide en catálogo
+    const matched = productos.find(p => p.producto.trim().toLowerCase() === form.producto.trim().toLowerCase())
+    if (matched) {
+      const currentStock = matched.stock ?? 0
+      const newStock = Math.max(0, currentStock - 1)
+      await supabase.from('productos').update({ stock: newStock }).eq('id', matched.id)
+      setProductos(prev => prev.map(p => p.id === matched.id ? { ...p, stock: newStock } : p))
+    }
+
     await supabase.from('ventas').insert({
       fecha: form.fecha, mes: form.mes, producto: form.producto,
       precio_venta: parseFloat(form.precio_venta),
@@ -265,7 +275,21 @@ export default function VentasPage() {
               </div>
             </div>
             <div>
-              <label className="label text-xs mb-1 block">Producto</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label text-xs block">Producto</label>
+                {form.producto && (() => {
+                  const matched = productos.find(p => p.producto.trim().toLowerCase() === form.producto.trim().toLowerCase())
+                  if (matched) {
+                    const stock = matched.stock ?? 0
+                    return stock > 0 ? (
+                      <span className="text-xs text-lime font-semibold">Stock disponible: {stock} u.</span>
+                    ) : (
+                      <span className="text-xs text-red-400 font-semibold font-mono animate-pulse">⚠️ ¡Sin Stock en local!</span>
+                    )
+                  }
+                  return <span className="text-xs text-dim">Venta manual (no catálogo)</span>
+                })()}
+              </div>
               <input list="lista-productos" value={form.producto}
                 onChange={e => onProductoChange(e.target.value)}
                 placeholder="Escribí o seleccioná del catálogo..."

@@ -145,6 +145,8 @@ create table productos (
   imagen_url   text,                 -- URL pública (Supabase Storage)
   categoria    text default 'General',
   linea        text default 'madera', -- 'madera' | 'melamina'
+  stock        integer default 0,    -- Stock físico en el local
+  alerta_critica boolean default false, -- Campana de aviso crítico si stock = 0
   created_at   timestamptz default now()
 );
 ```
