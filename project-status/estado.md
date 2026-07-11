@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 11/07/2026
+**Última actualización:** 11/07/2026 — Sesión tarde (Control de Stock + Fix build Vercel)
 
 ---
 
@@ -8,6 +8,7 @@
 - URL producción: https://mision-control-omega.vercel.app
 - GitHub: https://github.com/Rubeler/mision-control (público)
 - Webhook WhatsApp: https://mision-control-omega.vercel.app/api/whatsapp
+- Último commit en producción: `ba7bc9d` — build exitoso ✅
 
 ---
 
@@ -94,6 +95,7 @@ El objetivo es hacer una instalación completa desde cero siguiendo los pasos de
 - **Puerto ocupado** al reiniciar → servidor en 3001, abrir `localhost:3001`
 - **Build Vercel falla con TS errors** → `next.config.js` ya tiene `ignoreBuildErrors: true`, NO borrarlo
 - **HyperFrames render** → siempre setear `$env:HYPERFRAMES_BROWSER` antes de `npx hyperframes render`
+- **⚠️ supabase-admin NO inicializar a nivel de módulo** → El cliente de Supabase con `service_role` DEBE crearse dentro de una función (lazy), no como `export const supabaseAdmin = createClient(...)` al tope del archivo. Vercel falla en build porque las env vars no existen en tiempo de compilación estática. Usar `export function getSupabaseAdmin() { return createClient(...) }` — ya corregido en `lib/supabase-admin.ts` (commit `ba7bc9d`)
 
 ---
 
