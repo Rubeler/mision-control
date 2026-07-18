@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, Search, X, Pencil, Download, ExternalLink, Image as ImageIcon, Upload } from 'lucide-react'
+import { Plus, Search, X, Pencil, Trash2, Download, ExternalLink, Image as ImageIcon, Upload } from 'lucide-react'
 import { exportarExcel } from '@/lib/exportExcel'
 import Link from 'next/link'
 
@@ -25,6 +25,7 @@ export default function ProductosPage() {
   const [loading, setLoading]     = useState(true)
   const [modal, setModal]         = useState(false)
   const [saving, setSaving]       = useState(false)
+  const [deleting, setDeleting]   = useState(false)
   const [editId, setEditId]       = useState<string | null>(null)
   const [form, setForm]           = useState(emptyForm)
   const [subiendo, setSubiendo]   = useState(false)
@@ -57,6 +58,8 @@ export default function ProductosPage() {
 
   const onCostoChange  = (val: string) => setForm(f => ({ ...f, costo:        val, margen_pct: calcularMargen(val, f.precio_venta) }))
   const onPrecioChange = (val: string) => setForm(f => ({ ...f, precio_venta: val, margen_pct: calcularMargen(f.costo, val) }))
+
+  const cerrarModal = () => { setModal(false); setForm(emptyForm); setEditId(null); setDeleting(false); setSaving(false) }
 
   const abrirNuevo = () => { setEditId(null); setForm(emptyForm); setModal(true) }
 
@@ -91,7 +94,19 @@ export default function ProductosPage() {
     } else {
       await supabase.from('productos').insert(datos)
     }
-    setSaving(false); setModal(false); setForm(emptyForm); setEditId(null)
+    setSaving(false); cerrarModal()
+    cargar()
+  }
+
+  const eliminarProducto = async (id = editId, nombre = form.producto) => {
+    if (!id || deleting) return
+
+    const confirmado = window.confirm(`Eliminar "${nombre}" del catálogo? Esta acción no se puede deshacer.`)
+    if (!confirmado) return
+
+    setDeleting(true)
+    await supabase.from('productos').delete().eq('id', id)
+    cerrarModal()
     cargar()
   }
 
@@ -189,10 +204,16 @@ export default function ProductosPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <button onClick={() => abrirEditar(p)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-card-2 border border-border text-dim hover:text-cyan hover:border-cyan/30 cursor-pointer">
-                        <Pencil size={13} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => abrirEditar(p)} title="Editar producto"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-card-2 border border-border text-dim hover:text-cyan hover:border-cyan/30 cursor-pointer">
+                          <Pencil size={13} />
+                        </button>
+                        <button onClick={() => eliminarProducto(p.id, p.producto)} title="Eliminar producto"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-card-2 border border-border text-dim hover:text-red-400 hover:border-red-400/30 cursor-pointer">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -209,7 +230,7 @@ export default function ProductosPage() {
               <h3 className="font-mono text-lg font-bold text-lime">
                 {editId ? 'Editar Producto' : 'Nuevo Producto'}
               </h3>
-              <button onClick={() => setModal(false)} className="text-dim hover:text-muted cursor-pointer"><X size={18}/></button>
+              <button onClick={cerrarModal} className="text-dim hover:text-muted cursor-pointer"><X size={18}/></button>
             </div>
 
             <div>
@@ -289,10 +310,20 @@ export default function ProductosPage() {
               )}
             </div>
 
-            <button onClick={guardar} disabled={saving || !form.producto || !form.costo || !form.precio_venta}
-              className="w-full py-2.5 rounded-lg bg-lime/10 border border-lime/30 text-lime font-mono font-semibold hover:bg-lime/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
-              {saving ? 'Guardando...' : editId ? 'Actualizar producto' : 'Guardar producto'}
-            </button>
+            <div className="space-y-2">
+              <button onClick={guardar} disabled={saving || deleting || !form.producto || !form.costo || !form.precio_venta}
+                className="w-full py-2.5 rounded-lg bg-lime/10 border border-lime/30 text-lime font-mono font-semibold hover:bg-lime/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                {saving ? 'Guardando...' : editId ? 'Actualizar producto' : 'Guardar producto'}
+              </button>
+
+              {editId && (
+                <button onClick={() => eliminarProducto()} disabled={saving || deleting}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 font-mono font-semibold hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                  <Trash2 size={14} />
+                  {deleting ? 'Eliminando...' : 'Eliminar producto'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
