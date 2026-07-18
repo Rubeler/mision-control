@@ -51,6 +51,7 @@
 | `MISION_CONTROL_OFERTA_COMERCIAL.md` | Qué es la app, módulos, beneficios, FAQ — para mostrar al cliente |
 | `Stack y desarrollo para vender.md` | Stack técnico completo + guía de instalación en 2 versiones |
 | `STACK_Y_DESARROLLO.md` | Versión original completa (con catálogo) — NO tocar |
+| `MEJORAS_CRM_LEADS.md` | Opciones y propuestas de mejoras para ordenar el CRM y seguimientos |
 | `estado.md` | Este archivo |
 
 ---
@@ -74,8 +75,9 @@
 
 ---
 
-## ⏳ PRÓXIMA SESIÓN — Prueba de instalación en otra PC
+## ⏳ PRÓXIMA SESIÓN
 
+### 1. Prueba de instalación en otra PC
 El objetivo es hacer una instalación completa desde cero siguiendo los pasos del documento "Stack y desarrollo para vender.md" como si fuera un cliente, para:
 - Verificar que los pasos están correctos y completos
 - Medir el tiempo real de instalación
@@ -83,6 +85,9 @@ El objetivo es hacer una instalación completa desde cero siguiendo los pasos de
 - Tener la app funcionando al 100% en una URL nueva
 
 **Versión a instalar:** Opción A (sin WhatsApp bot) para validar primero la base.
+
+### 2. Revisión de Mejoras en CRM Leads
+- Analizar y elegir una opción de diseño detallada en [MEJORAS_CRM_LEADS.md](file:///c:/Users/Ruben/Desktop/mision-control/project-status/MEJORAS_CRM_LEADS.md) para resolver la acumulación de leads y organizar los seguimientos.
 
 ---
 
