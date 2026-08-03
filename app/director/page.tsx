@@ -33,7 +33,7 @@ function GaugeHalf({ value, color, label, sub }: {
 }
 
 interface Venta { id: string; fecha: string; mes: string; producto: string; precio_venta: number; margen_pct: number; utilidad_bruta: number; canal: string }
-interface Gasto { id: string; mes: string; tipo: string; categoria: string; monto: number }
+interface Gasto { id: string; mes: string; tipo: string; categoria: string; monto: number; dia_vencimiento?: number | null }
 interface Lead  { id: number; fecha: string; estado: string; canal: string; producto: string; nombre: string | null }
 
 const fmt      = (n: number) => '$' + Math.round(n).toLocaleString('es-AR')
@@ -61,9 +61,11 @@ export default function DirectorPage() {
   const [loading, setLoading] = useState(true)
   const [mesFiltro, setMesFiltro] = useState<string | null>(null)
 
-  const hoy             = new Date().toISOString().split('T')[0]
-  const hora            = new Date().getHours()
-  const mesActualNombre = MESES_NAMES[new Date().getMonth()]
+  const ahora           = new Date()
+  const hoy             = ahora.toISOString().split('T')[0]
+  const hora            = ahora.getHours()
+  const diaHoy          = ahora.getDate()
+  const mesActualNombre = MESES_NAMES[ahora.getMonth()]
   const saludo          = hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches'
 
   useEffect(() => {
@@ -281,6 +283,46 @@ export default function DirectorPage() {
             </div>
           </div>
         )}
+
+        {/* Alertas de Gastos Fijos próximos a vencer */}
+        {(() => {
+          const alertasGastos = gastos.filter(g =>
+            g.tipo === 'Fijo' &&
+            g.mes === mesActualNombre &&
+            g.dia_vencimiento != null
+          ).map(g => ({
+            ...g,
+            diasRestantes: (g.dia_vencimiento as number) - diaHoy
+          })).filter(g => g.diasRestantes >= 0 && g.diasRestantes <= 3)
+            .sort((a, b) => a.diasRestantes - b.diasRestantes)
+
+          if (alertasGastos.length === 0) return null
+          return (
+            <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/30 rounded-xl space-y-1.5">
+              <p className="text-xs font-mono font-bold text-orange-400 flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-400" />
+                </span>
+                GASTOS FIJOS PRÓXIMOS A VENCER:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {alertasGastos.map(g => (
+                  <span key={g.id} className={`text-xs px-2 py-0.5 rounded-lg border font-semibold flex items-center gap-1 ${
+                    g.diasRestantes <= 1
+                      ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                      : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                  }`}>
+                    {g.diasRestantes === 0 ? '🔴' : g.diasRestantes === 1 ? '🔴' : '🟡'}{' '}
+                    {g.categoria} — vence el {g.dia_vencimiento} {mesActualNombre}
+                    {g.diasRestantes === 0 ? ' (¡HOY!)' : g.diasRestantes === 1 ? ' (¡mañana!)' : ` (en ${g.diasRestantes} días)`}
+                    {' · '}${g.monto.toLocaleString('es-AR')}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         <div className="mt-4 pt-3 border-t border-border flex flex-wrap gap-4 text-xs text-dim">
           <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-violet inline-block" />{activos} oportunidades activas</span>
