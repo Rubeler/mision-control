@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 11/07/2026 — Sesión tarde (Control de Stock + Fix build Vercel)
+**Última actualización:** 03/08/2026 — Módulo de Compras + Alertas de Gastos Fijos
 
 ---
 
@@ -17,11 +17,12 @@
 ### Core
 - Dashboard — KPIs anuales + selector de mes (filtra todos los KPIs y charts)
 - Ventas — CRUD completo + exportación Excel (con descuento automático de stock de catálogo e indicador de stock en modal)
-- Gastos — CRUD completo + exportación Excel
+- Compras — CRUD histórico de mercadería a proveedores y métricas de inversión
+- Gastos — CRUD completo + exportación Excel + alertas de vencimientos de gastos fijos
 - Productos — CRUD + margen automático + exportación Excel
 - Control de Stock — CRUD de stock en `/stock` + carga automática de muebles base de proveedores + campanas de alerta crítica por producto + estilo de advertencia visual
 - Leads CRM — Kanban drag & drop + botón "Muebles" + botón "Catálogo"
-- Director OS — métricas ejecutivas + selector de mes Ene-Dic con ventas vs gastos desglosados + sección de alertas críticas de stock
+- Director OS — métricas ejecutivas + selector de mes Ene-Dic con ventas vs gastos desglosados + sección de alertas críticas de stock + banner de vencimientos de gastos fijos
 - Guiones de Venta — calificación 7 preguntas + 3 plantillas seguimiento WhatsApp
 - Navbar — fecha en tiempo real
 
