@@ -33,7 +33,7 @@ function GaugeHalf({ value, color, label, sub }: {
 }
 
 interface Venta { id: string; fecha: string; mes: string; producto: string; precio_venta: number; margen_pct: number; utilidad_bruta: number; canal: string }
-interface Gasto { id: string; mes: string; tipo: string; categoria: string; monto: number; dia_vencimiento?: number | null }
+interface Gasto { id: string; mes: string; tipo: string; categoria: string; monto: number; dia_vencimiento?: number | null; pagado?: boolean | null }
 interface Lead  { id: number; fecha: string; estado: string; canal: string; producto: string; nombre: string | null }
 
 const fmt      = (n: number) => '$' + Math.round(n).toLocaleString('es-AR')
@@ -71,7 +71,7 @@ export default function DirectorPage() {
   useEffect(() => {
     Promise.all([
       supabase.from('ventas').select('id, fecha, mes, producto, precio_venta, margen_pct, utilidad_bruta, canal').order('fecha', { ascending: false }),
-      supabase.from('gastos').select('id, mes, tipo, categoria, monto'),
+      supabase.from('gastos').select('id, mes, tipo, categoria, monto, dia_vencimiento, pagado'),
       supabase.from('leads').select('id, fecha, estado, canal, producto, nombre').order('id', { ascending: false }),
       supabase.from('productos').select('id, producto, stock, alerta_critica'),
     ]).then(([{ data: v }, { data: g }, { data: l }, { data: p }]) => {
@@ -289,7 +289,8 @@ export default function DirectorPage() {
           const alertasGastos = gastos.filter(g =>
             g.tipo === 'Fijo' &&
             g.mes === mesActualNombre &&
-            g.dia_vencimiento != null
+            g.dia_vencimiento != null &&
+            !g.pagado
           ).map(g => ({
             ...g,
             diasRestantes: (g.dia_vencimiento as number) - diaHoy

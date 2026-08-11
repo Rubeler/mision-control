@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, X, Download, Pencil, Trash2 } from 'lucide-react'
+import { Plus, X, Download, Pencil, Trash2, CheckCircle2 } from 'lucide-react'
 import { exportarExcel } from '@/lib/exportExcel'
 
 const tipoColor: Record<string, string> = {
@@ -19,6 +19,7 @@ interface Gasto {
   categoria: string
   monto: number
   dia_vencimiento?: number | null
+  pagado?: boolean | null
 }
 
 export default function GastosPage() {
@@ -119,6 +120,16 @@ export default function GastosPage() {
     cargarGastos()
   }
 
+  const togglePagado = async (gasto: Gasto) => {
+    const nuevoEstado = !gasto.pagado
+    setGastos(prev => prev.map(g => g.id === gasto.id ? { ...g, pagado: nuevoEstado } : g))
+    const { error } = await supabase.from('gastos').update({ pagado: nuevoEstado }).eq('id', gasto.id)
+    if (error) {
+      setGastos(prev => prev.map(g => g.id === gasto.id ? { ...g, pagado: !nuevoEstado } : g))
+      alert('Error al actualizar el estado: ' + error.message)
+    }
+  }
+
   const total = gastos.reduce((s, g) => s + g.monto, 0)
   const fijos = gastos.filter(g => g.tipo === 'Fijo').reduce((s, g) => s + g.monto, 0)
   const vars  = gastos.filter(g => g.tipo === 'Variable').reduce((s, g) => s + g.monto, 0)
@@ -128,7 +139,8 @@ export default function GastosPage() {
   const alertasProximas = gastos.filter(g =>
     g.tipo === 'Fijo' &&
     g.mes === mesActual &&
-    g.dia_vencimiento != null
+    g.dia_vencimiento != null &&
+    !g.pagado
   ).map(g => {
     const diasRestantes = (g.dia_vencimiento as number) - diaHoy
     return { ...g, diasRestantes }
@@ -248,10 +260,21 @@ export default function GastosPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 font-mono text-violet">${g.monto.toLocaleString('es-AR')}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex items-center justify-end gap-2">
+                      {g.tipo === 'Fijo' && (
+                        <button onClick={() => togglePagado(g)}
+                          title={g.pagado ? 'Desmarcar pago' : 'Marcar como pagado'}
+                          className={`p-1.5 rounded-lg border cursor-pointer transition-all ${
+                            g.pagado
+                              ? 'opacity-100 bg-lime/10 text-lime border-lime/30 hover:bg-lime/20'
+                              : 'opacity-0 group-hover:opacity-100 bg-card-2 border-border text-dim hover:text-lime hover:border-lime/30'
+                          }`}>
+                          <CheckCircle2 size={14} />
+                        </button>
+                      )}
                       <button onClick={() => abrirEditar(g)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-card-2 border border-border text-dim hover:text-violet hover:border-violet/30 cursor-pointer">
-                        <Pencil size={13} />
+                        <Pencil size={14} />
                       </button>
                     </td>
                   </tr>
