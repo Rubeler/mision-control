@@ -1,21 +1,22 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen, MessageSquare, ShieldCheck, Boxes, ShoppingBag } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen, MessageSquare, ShieldCheck, Boxes, ShoppingBag, Settings } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 
 const NAV_BASE = [
-  { href: '/',          label: 'Dashboard',    icon: LayoutDashboard, accent: false },
-  { href: '/ventas',    label: 'Ventas',       icon: ShoppingCart,    accent: false },
-  { href: '/leads',     label: 'Leads CRM',    icon: Users,           accent: false },
-  { href: '/gastos',    label: 'Gastos',       icon: Receipt,       accent: false },
-  { href: '/compras',   label: 'Compras',      icon: ShoppingBag,   accent: false },
-  { href: '/productos', label: 'Productos',    icon: Package,       accent: false },
-  { href: '/stock',     label: 'Control Stock',icon: Boxes,           accent: false },
-  { href: '/guiones',   label: 'Guiones',      icon: MessageSquare,   accent: false },
-  { href: '/director',  label: 'Director OS',  icon: Gauge,           accent: true  },
-  { href: '/galeria',   label: 'Ver catálogo', icon: BookOpen,        accent: true  },
+  { href: '/',             label: 'Dashboard',    icon: LayoutDashboard, accent: false },
+  { href: '/ventas',       label: 'Ventas',       icon: ShoppingCart,    accent: false },
+  { href: '/leads',        label: 'Leads CRM',    icon: Users,           accent: false },
+  { href: '/gastos',       label: 'Gastos',       icon: Receipt,         accent: false },
+  { href: '/compras',      label: 'Compras',      icon: ShoppingBag,     accent: false },
+  { href: '/productos',    label: 'Productos',    icon: Package,         accent: false },
+  { href: '/stock',        label: 'Control Stock',icon: Boxes,           accent: false },
+  { href: '/guiones',      label: 'Guiones',      icon: MessageSquare,   accent: false },
+  { href: '/configuracion',label: 'Configuración',icon: Settings,        accent: false },
+  { href: '/director',     label: 'Director OS',  icon: Gauge,           accent: true  },
+  { href: '/galeria',      label: 'Ver catálogo', icon: BookOpen,        accent: true  },
 ]
 
 const NAV_ADMIN = { href: '/admin', label: 'Admin', icon: ShieldCheck, accent: true }

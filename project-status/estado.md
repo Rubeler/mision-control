@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 12/08/2026 — Toggle de Entregas en Ventas + Deploy a Producción
+**Última actualización:** 12/08/2026 — WhatsApp QR Local + Toggle Entregas en Ventas
 
 ---
 
@@ -8,7 +8,7 @@
 - URL producción: https://mision-control-omega.vercel.app
 - GitHub: https://github.com/Rubeler/mision-control (público)
 - Webhook WhatsApp: https://mision-control-omega.vercel.app/api/whatsapp
-- Último commit en producción: `20511d3` — build en proceso ⏳ (toggle entregas en ventas)
+- Último commit en producción: `44372fb` — docs: actualizar estado.md
 
 ---
 
@@ -16,7 +16,7 @@
 
 ### Core
 - Dashboard — KPIs anuales + selector de mes (filtra todos los KPIs y charts)
-- Ventas — CRUD completo + exportación Excel (con descuento automático de stock de catálogo, indicador de stock en modal y toggle de estado de entrega Entregada/Pendiente)
+- Ventas — CRUD completo + exportación Excel (con descuento automático de stock de catálogo, indicador de stock en modal y toggle de estado de entrega **Entregada/Pendiente**)
 - Compras — CRUD histórico de mercadería a proveedores y métricas de inversión
 - Gastos — CRUD completo + exportación Excel + alertas de vencimientos de gastos fijos + toggle para marcar gastos como pagados
 - Productos — CRUD + margen automático + exportación Excel
@@ -25,12 +25,32 @@
 - Director OS — métricas ejecutivas + selector de mes Ene-Dic con ventas vs gastos desglosados + sección de alertas críticas de stock + banner de vencimientos de gastos fijos
 - Guiones de Venta — calificación 7 preguntas + 3 plantillas seguimiento WhatsApp
 - Navbar — fecha en tiempo real
+- **Configuración** — pantalla `/configuracion` con QR de WhatsApp en tiempo real, indicador de estado (Conectado/Esperando/Desconectado) y formulario de prueba de envío
 
-### WhatsApp Bot ✅ (resuelto 28/05/2026)
-- Webhook recibe mensajes y crea leads automáticamente
+### WhatsApp Bot Oficial API ✅ (resuelto 28/05/2026)
+- Webhook recibe mensajes y crea leads automáticamente via Meta Cloud API
 - Auto-reply funcionando
 - Token permanente (no expira)
 - Fix número Argentina: con "15"
+
+### WhatsApp QR Local ⚠️ (implementado 12/08/2026 — MODO LOCAL, pendiente deploy productivo)
+- Microservicio Node.js independiente en `whatsapp-service/` usando **@whiskeysockets/baileys** (Multi-Device)
+- Servidor Express en `localhost:4000` con endpoints REST: `GET /status`, `POST /send`, `POST /logout`
+- Genera código QR en Base64 y lo expone al frontend. Se refresca automáticamente al expirar
+- Al escanear el QR con WhatsApp del celular, la sesión queda activa y se guardan las credenciales en `auth_info_baileys/`
+- Mensajes entrantes de clientes crean **Leads automáticamente** en Supabase (filtra `status@broadcast` y grupos)
+- Envío de mensajes salientes via `POST /send` desde cualquier parte del frontend
+- **Pantalla `/configuracion`** con QR en pantalla, badge de estado animado y formulario de prueba de envío
+- **Botón `Configuración`** agregado al Sidebar (icono Settings)
+- **Stack del microservicio:** `node.js v24` + `@whiskeysockets/baileys ^6.7.12` + `express ^4.21.2` + `qrcode ^1.5.4` + `@supabase/supabase-js ^2.48.1` + `dotenv ^16.4.7`
+
+#### ⚠️ Limitación actual (MODO LOCAL)
+El microservicio corre en tu computadora y requiere que la PC esté encendida. Para llevarlo a producción 24/7 se necesita desplegarlo en un servidor externo como **Railway**, **Render** o **Fly.io** con soporte para procesos Node.js persistentes (NO Vercel serverless).
+
+#### 🔧 Bugs conocidos/resueltos del microservicio
+- **Status broadcasts**: Baileys capturaba estados de WhatsApp (`status@broadcast`) como mensajes → filtrado corregido
+- **Leads vacíos**: Mensajes de media sin texto generaban leads vacíos → filtrado por `texto.trim()` corregido
+- **Pre-keys faltantes**: Al primer inicio puede aparecer `error in handling message` → solución: borrar `auth_info_baileys/` y volver a escanear QR
 
 ### Catálogo Digital ✅ (en producción, no incluido en versión para venta)
 - `/catalogo` → Landing selector
@@ -102,6 +122,7 @@ El objetivo es hacer una instalación completa desde cero siguiendo los pasos de
 - **Build Vercel falla con TS errors** → `next.config.js` ya tiene `ignoreBuildErrors: true`, NO borrarlo
 - **HyperFrames render** → siempre setear `$env:HYPERFRAMES_BROWSER` antes de `npx hyperframes render`
 - **⚠️ supabase-admin NO inicializar a nivel de módulo** → El cliente de Supabase con `service_role` DEBE crearse dentro de una función (lazy), no como `export const supabaseAdmin = createClient(...)` al tope del archivo. Vercel falla en build porque las env vars no existen en tiempo de compilación estática. Usar `export function getSupabaseAdmin() { return createClient(...) }` — ya corregido en `lib/supabase-admin.ts` (commit `ba7bc9d`)
+- **⚠️ whatsapp-service: NO subir `auth_info_baileys/` a GitHub** → contiene credenciales de sesión activa de WhatsApp. Agregar al `.gitignore`
 
 ---
 

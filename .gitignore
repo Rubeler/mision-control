@@ -4,3 +4,7 @@ node_modules
 
 .vercel
 Meta/
+
+# WhatsApp QR session credentials (NO subir nunca a GitHub)
+whatsapp-service/auth_info_baileys/
+whatsapp-service/node_modules/
