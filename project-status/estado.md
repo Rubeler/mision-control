@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 03/08/2026 — Módulo de Compras + Alertas de Gastos Fijos
+**Última actualización:** 12/08/2026 — Toggle de Entregas en Ventas + Deploy a Producción
 
 ---
 
@@ -8,7 +8,7 @@
 - URL producción: https://mision-control-omega.vercel.app
 - GitHub: https://github.com/Rubeler/mision-control (público)
 - Webhook WhatsApp: https://mision-control-omega.vercel.app/api/whatsapp
-- Último commit en producción: `ba7bc9d` — build exitoso ✅
+- Último commit en producción: `20511d3` — build en proceso ⏳ (toggle entregas en ventas)
 
 ---
 
@@ -16,9 +16,9 @@
 
 ### Core
 - Dashboard — KPIs anuales + selector de mes (filtra todos los KPIs y charts)
-- Ventas — CRUD completo + exportación Excel (con descuento automático de stock de catálogo e indicador de stock en modal)
+- Ventas — CRUD completo + exportación Excel (con descuento automático de stock de catálogo, indicador de stock en modal y toggle de estado de entrega Entregada/Pendiente)
 - Compras — CRUD histórico de mercadería a proveedores y métricas de inversión
-- Gastos — CRUD completo + exportación Excel + alertas de vencimientos de gastos fijos
+- Gastos — CRUD completo + exportación Excel + alertas de vencimientos de gastos fijos + toggle para marcar gastos como pagados
 - Productos — CRUD + margen automático + exportación Excel
 - Control de Stock — CRUD de stock en `/stock` + carga automática de muebles base de proveedores + campanas de alerta crítica por producto + estilo de advertencia visual
 - Leads CRM — Kanban drag & drop + botón "Muebles" + botón "Catálogo"
