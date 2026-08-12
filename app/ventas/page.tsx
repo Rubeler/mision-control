@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, Search, X, Pencil, Download, Trash2 } from 'lucide-react'
+import { Plus, Search, X, Pencil, Download, Trash2, CheckCircle2 } from 'lucide-react'
 import { exportarExcel } from '@/lib/exportExcel'
 
 const canalColor: Record<string, string> = {
@@ -14,6 +14,7 @@ const canalColor: Record<string, string> = {
 interface Venta {
   id: string; fecha: string; mes: string; producto: string
   precio_venta: number; margen_pct: number; utilidad_bruta: number; canal: string
+  entregada?: boolean | null
 }
 interface Producto { id: string; producto: string; costo: number; precio_venta: number; margen_pct: number; stock?: number }
 
@@ -171,6 +172,16 @@ export default function VentasPage() {
     cargarVentas()
   }
 
+  const toggleEntregada = async (venta: Venta) => {
+    const nuevoEstado = !venta.entregada
+    setVentas(prev => prev.map(v => v.id === venta.id ? { ...v, entregada: nuevoEstado } : v))
+    const { error } = await supabase.from('ventas').update({ entregada: nuevoEstado }).eq('id', venta.id)
+    if (error) {
+      setVentas(prev => prev.map(v => v.id === venta.id ? { ...v, entregada: !nuevoEstado } : v))
+      alert('Error al actualizar el estado: ' + error.message + '\n\n¿Agregaste la columna "entregada" (boolean) en Supabase?')
+    }
+  }
+
   const filtered = ventas.filter(v =>
     v.producto.toLowerCase().includes(q.toLowerCase()) ||
     (v.canal || '').toLowerCase().includes(q.toLowerCase())
@@ -197,6 +208,7 @@ export default function VentasPage() {
               'Margen %': v.margen_pct ? (v.margen_pct * 100).toFixed(1) + '%' : '',
               'Utilidad Bruta': v.utilidad_bruta,
               Canal: v.canal || 'Sin canal',
+              Entrega: v.entregada ? 'Entregada' : 'Pendiente',
             }))
           }], 'Ventas_Debuenamadera')}
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-dim text-sm hover:text-lime hover:border-lime/30 transition-colors cursor-pointer">
@@ -220,8 +232,8 @@ export default function VentasPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                {['Fecha','Mes','Producto','Precio','Margen','Canal',''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 label font-medium">{h}</th>
+                {['Fecha','Mes','Producto','Precio','Margen','Canal','Entrega',''].map((h, i) => (
+                  <th key={i} className="text-left px-4 py-3 label font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -237,6 +249,18 @@ export default function VentasPage() {
                     <span className={`text-xs px-2 py-0.5 rounded-full border ${canalColor[v.canal || ''] || canalColor['']}`}>
                       {v.canal || 'Sin canal'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => toggleEntregada(v)}
+                      title={v.entregada ? 'Desmarcar entrega' : 'Marcar como entregada'}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                        v.entregada
+                          ? 'bg-lime/10 border-lime/30 text-lime hover:bg-lime/20'
+                          : 'bg-card-2 border-border text-dim hover:text-muted hover:border-dim/30'
+                      }`}>
+                      <CheckCircle2 size={13} className={v.entregada ? 'text-lime' : 'text-dim opacity-50'} />
+                      {v.entregada ? 'Entregada' : 'Pendiente'}
+                    </button>
                   </td>
                   <td className="px-4 py-3">
                     <button onClick={() => abrirEdit(v)}
