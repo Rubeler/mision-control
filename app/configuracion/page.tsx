@@ -22,7 +22,7 @@ export default function ConfiguracionPage() {
 
   const checkStatus = async () => {
     try {
-      const res = await fetch('http://localhost:4000/status')
+      const res = await fetch('/api/evolution/status')
       if (res.ok) {
         const data = await res.json()
         setWaStatus(data)
@@ -46,10 +46,11 @@ export default function ConfiguracionPage() {
     if (!window.confirm('¿Confirmás que querés cerrar la sesión de WhatsApp vinculada?')) return
     setLoggingOut(true)
     try {
-      await fetch('http://localhost:4000/logout', { method: 'POST' })
+      await fetch('/api/evolution/logout', { method: 'POST' })
       await checkStatus()
     } catch (err) {
-      alert('Error al cerrar sesión: ' + err.message)
+      const message = err instanceof Error ? err.message : 'Error desconocido'
+      alert('Error al cerrar sesión: ' + message)
     } finally {
       setLoggingOut(false)
     }
@@ -62,7 +63,7 @@ export default function ConfiguracionPage() {
     setSendResult(null)
 
     try {
-      const res = await fetch('http://localhost:4000/send', {
+      const res = await fetch('/api/evolution/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: testPhone, message: testMsg })
@@ -74,8 +75,8 @@ export default function ConfiguracionPage() {
       } else {
         setSendResult({ error: data.error || 'No se pudo enviar el mensaje' })
       }
-    } catch (err: any) {
-      setSendResult({ error: 'El servidor local de WhatsApp no está respondiendo (puerto 4000).' })
+    } catch {
+      setSendResult({ error: 'No se pudo contactar al servicio de WhatsApp.' })
     } finally {
       setSendingMsg(false)
     }
@@ -161,13 +162,10 @@ export default function ConfiguracionPage() {
         ) : (
           <div className="bg-card-2 border border-border rounded-2xl p-6 text-center space-y-3 max-w-md mx-auto">
             <AlertCircle size={32} className="text-amber-400 mx-auto opacity-80" />
-            <h4 className="font-mono text-sm font-bold text-muted">Servidor local de WhatsApp no detectado</h4>
+            <h4 className="font-mono text-sm font-bold text-muted">WhatsApp desconectado</h4>
             <p className="text-xs text-dim leading-relaxed">
-              Para vincular el QR, asegurate de tener corriendo el servicio local en la terminal con:
+              La instancia de WhatsApp no está conectada. Verificá el estado del servicio en Railway o esperá a que se genere un nuevo código QR.
             </p>
-            <div className="bg-black/50 border border-border rounded-lg p-2.5 font-mono text-xs text-cyan select-all">
-              cd whatsapp-service && npm start
-            </div>
           </div>
         )}
       </div>

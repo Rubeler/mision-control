@@ -30,12 +30,16 @@ let currentQR = null
 let connectionStatus = 'DISCONNECTED' // 'DISCONNECTED' | 'SCAN_QR' | 'CONNECTED'
 let connectedUser = null
 
+// Store de mensajes enviados para responder a pedidos de reintento de WhatsApp
+// (sin esto, los mensajes salientes quedan colgados en "Esperando mensaje")
+const sentMessages = new Map()
+
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER)
 
   sock = makeWASocket({
     auth: state,
-    printQRInTerminal: true,
+    getMessage: async (key) => sentMessages.get(key.id),
   })
 
   sock.ev.on('creds.update', saveCreds)
@@ -92,7 +96,10 @@ async function connectToWhatsApp() {
       if (!texto.trim()) continue
 
       const pushName = msg.pushName || 'Cliente WhatsApp'
-      const rawNumber = remoteJid.split('@')[0]
+      // WhatsApp oculta el número real detrás de un LID en algunos contactos;
+      // Baileys expone el número real en senderPn cuando esto pasa
+      const realJid = remoteJid.endsWith('@lid') && msg.key.senderPn ? msg.key.senderPn : remoteJid
+      const rawNumber = realJid.split('@')[0]
       const telefonoFormateado = rawNumber.startsWith('549')
         ? `+54 9 ${rawNumber.slice(3)}`
         : `+${rawNumber}`
@@ -107,10 +114,11 @@ async function connectToWhatsApp() {
           await supabase.from('leads').insert({
             nombre: pushName,
             telefono: telefonoFormateado,
-            origen: 'WhatsApp QR',
-            etapa: 'Nuevo Lead',
-            notas: `Mensaje inicial: ${texto}`,
-            mueble_interes: 'Consulta por WhatsApp'
+            producto: texto.slice(0, 200),
+            canal: 'WhatsApp QR',
+            estado: 'Nuevo',
+            fecha: new Date().toISOString().split('T')[0],
+            notas: `Mensaje inicial: ${texto}`
           })
           console.log(`✨ [CRM] Lead creado automáticamente para ${pushName}`)
         }
@@ -145,7 +153,10 @@ app.post('/send', async (req, res) => {
       cleanPhone = `${cleanPhone}@s.whatsapp.net`
     }
 
-    await sock.sendMessage(cleanPhone, { text: message })
+    const sent = await sock.sendMessage(cleanPhone, { text: message })
+    if (sent?.key?.id && sent.message) {
+      sentMessages.set(sent.key.id, sent.message)
+    }
     console.log(`📤 [Mensaje enviado] a ${phone}: "${message}"`)
     res.json({ success: true })
   } catch (err) {

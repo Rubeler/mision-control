@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Rutas públicas — accesibles sin login
-const PUBLIC_ROUTES = ['/login', '/catalogo', '/galeria', '/api/whatsapp']
+const PUBLIC_ROUTES = ['/login', '/catalogo', '/galeria', '/api/whatsapp', '/api/evolution/webhook']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })

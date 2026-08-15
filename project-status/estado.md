@@ -1,5 +1,5 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 12/08/2026 — WhatsApp QR Local + Toggle Entregas en Ventas
+**Última actualización:** 15/08/2026 — WhatsApp QR migrado a Evolution API (Railway) + Toggle Entregas en Ventas
 
 ---
 
@@ -33,24 +33,14 @@
 - Token permanente (no expira)
 - Fix número Argentina: con "15"
 
-### WhatsApp QR Local ⚠️ (implementado 12/08/2026 — MODO LOCAL, pendiente deploy productivo)
-- Microservicio Node.js independiente en `whatsapp-service/` usando **@whiskeysockets/baileys** (Multi-Device)
-- Servidor Express en `localhost:4000` con endpoints REST: `GET /status`, `POST /send`, `POST /logout`
-- Genera código QR en Base64 y lo expone al frontend. Se refresca automáticamente al expirar
-- Al escanear el QR con WhatsApp del celular, la sesión queda activa y se guardan las credenciales en `auth_info_baileys/`
-- Mensajes entrantes de clientes crean **Leads automáticamente** en Supabase (filtra `status@broadcast` y grupos)
-- Envío de mensajes salientes via `POST /send` desde cualquier parte del frontend
-- **Pantalla `/configuracion`** con QR en pantalla, badge de estado animado y formulario de prueba de envío
-- **Botón `Configuración`** agregado al Sidebar (icono Settings)
-- **Stack del microservicio:** `node.js v24` + `@whiskeysockets/baileys ^6.7.12` + `express ^4.21.2` + `qrcode ^1.5.4` + `@supabase/supabase-js ^2.48.1` + `dotenv ^16.4.7`
-
-#### ⚠️ Limitación actual (MODO LOCAL)
-El microservicio corre en tu computadora y requiere que la PC esté encendida. Para llevarlo a producción 24/7 se necesita desplegarlo en un servidor externo como **Railway**, **Render** o **Fly.io** con soporte para procesos Node.js persistentes (NO Vercel serverless).
-
-#### 🔧 Bugs conocidos/resueltos del microservicio
-- **Status broadcasts**: Baileys capturaba estados de WhatsApp (`status@broadcast`) como mensajes → filtrado corregido
-- **Leads vacíos**: Mensajes de media sin texto generaban leads vacíos → filtrado por `texto.trim()` corregido
-- **Pre-keys faltantes**: Al primer inicio puede aparecer `error in handling message` → solución: borrar `auth_info_baileys/` y volver a escanear QR
+### WhatsApp QR ✅ (migrado a Evolution API 15/08/2026)
+- **Intento 1 (12-15/08/2026, abandonado):** microservicio Node.js propio en `whatsapp-service/` usando `@whiskeysockets/baileys` directo, corriendo en `localhost:4000`. Se arreglaron 3 bugs (columnas de Supabase mal mapeadas, mensajes salientes colgados por falta de `getMessage()`, sesión corrupta por reinicios abruptos) pero la causa de fondo no se pudo resolver: WhatsApp oculta el número real de los clientes detrás de un ID interno ("LID") para cuentas Business, y Baileys crudo no lo resuelve de forma confiable. Confirmado con un CRM competidor (Guelux OS) que el mismo número Business SÍ resuelve el número real cuando el conector es Evolution API. El código de `whatsapp-service/` queda en el repo sin usarse (referencia histórica), ya no se ejecuta.
+- **Intento 2 (15/08/2026, en uso):** se reemplazó el microservicio local por **Evolution API v2.3.7** (self-hosted, open source, más maduro que Baileys crudo para manejo de sesión/LID), desplegado 24/7 en **Railway** (proyecto "production", con Postgres + Redis), instancia `debuenamadera` vinculada al número 5491136449059.
+- El sitio (Next.js) ya no depende de ningún proceso local: `/configuracion` llama a rutas propias del servidor (`app/api/evolution/status`, `/send`, `/logout`, `/webhook`) que a su vez hablan con Evolution API en Railway. Funciona igual en local (`npm run dev`) que en producción.
+- **Confirmado funcionando en local (15/08/2026):** conexión del número vía QR, estado en tiempo real, y envío de mensaje de prueba (llegó correctamente al celular).
+- **Pendiente de confirmar:** creación automática de Leads a partir de mensajes entrantes — requiere que Evolution API (en Railway) pueda pegarle al webhook, y Railway no puede alcanzar `localhost`, así que este paso solo se puede probar con la app ya desplegada en Vercel con las variables de entorno cargadas y el webhook registrado apuntando a la URL de producción.
+- **Variables de entorno nuevas** (en `.env.local`, pendiente replicar en Vercel): `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`.
+- **Botón `Configuración`** en el Sidebar (icono Settings) ya existente, sin cambios.
 
 ### Catálogo Digital ✅ (en producción, no incluido en versión para venta)
 - `/catalogo` → Landing selector
