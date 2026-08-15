@@ -16,9 +16,10 @@ type EvolutionKey = {
 export async function POST(req: NextRequest) {
   const body = await req.json()
 
-  // Evolution API incluye la apikey de la instancia en el payload del webhook;
-  // rechazamos si no coincide para que nadie pueda inyectar leads falsos
-  if (body?.apikey && body.apikey !== process.env.EVOLUTION_API_KEY) {
+  // Evolution API incluye el token propio de la instancia (no la apikey global
+  // de administración) en el payload del webhook; rechazamos si no coincide
+  // para que nadie pueda inyectar leads falsos
+  if (body?.apikey && body.apikey !== process.env.EVOLUTION_INSTANCE_TOKEN) {
     return NextResponse.json({ ok: false }, { status: 401 })
   }
 
