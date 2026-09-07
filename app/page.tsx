@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-browser'
+
+const supabase = createClient()
 import { TrendingUp, ShoppingBag, Percent, DollarSign } from 'lucide-react'
 import VentasChart from '@/components/dashboard/VentasChart'
 import CanalDonut from '@/components/dashboard/CanalDonut'

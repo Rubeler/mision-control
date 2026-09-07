@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-browser'
+
+const supabase = createClient()
 import { Zap, TrendingUp, TrendingDown, Bell } from 'lucide-react'
 
 const MESES_NAMES = ['Ene','Feb','Mar','Abr','Mayo','Junio','Jul','Ago','Sep','Oct','Nov','Dic']

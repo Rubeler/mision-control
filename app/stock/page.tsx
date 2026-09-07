@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-browser'
+
+const supabase = createClient()
 import { Plus, Search, X, Pencil, Minus, Database, Check, AlertCircle, Bell, BellOff, Trash2 } from 'lucide-react'
 
 interface Producto {

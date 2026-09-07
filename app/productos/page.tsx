@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-browser'
+
+const supabase = createClient()
 import { Plus, Search, X, Pencil, Trash2, Download, ExternalLink, Image as ImageIcon, Upload } from 'lucide-react'
 import { exportarExcel } from '@/lib/exportExcel'
 import Link from 'next/link'

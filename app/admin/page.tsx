@@ -5,7 +5,8 @@ import { Plus, Trash2, Power, PowerOff, Copy, Check, RefreshCw } from 'lucide-re
 
 interface Profile {
   id: string; email: string; role: string; plan: string
-  activo: boolean; negocio: string | null; vence_en: string | null; created_at: string
+  activo: boolean; negocio_id: string | null; negocios: { nombre: string } | null
+  vence_en: string | null; created_at: string
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -148,7 +149,7 @@ export default function AdminPage() {
                     <span className={`w-2 h-2 rounded-full inline-block ${p.activo ? 'bg-lime' : 'bg-red-400'}`} />
                   </td>
                   <td className="px-4 py-3 text-muted font-mono text-xs">{p.email}</td>
-                  <td className="px-4 py-3 text-dim text-xs">{p.negocio || '—'}</td>
+                  <td className="px-4 py-3 text-dim text-xs">{p.negocios?.nombre || '—'}</td>
                   <td className="px-4 py-3">
                     <select value={p.plan} onChange={e => cambiarPlan(p, e.target.value)}
                       className={`text-xs px-2 py-1 rounded-full border font-semibold bg-transparent cursor-pointer ${PLAN_COLORS[p.plan]}`}>
@@ -199,6 +200,7 @@ export default function AdminPage() {
                   <input value={form.negocio} onChange={e => setForm(f => ({ ...f, negocio: e.target.value }))}
                     placeholder="Mueblería El Pino"
                     className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-lime/50" />
+                  <p className="text-xs text-dim mt-1">Si ya existe un negocio con ese nombre, el usuario se suma a ese mismo negocio (comparte sus datos). Si es nuevo, se crea.</p>
                 </div>
 
                 <div>
@@ -228,7 +230,7 @@ export default function AdminPage() {
                     className="flex-1 py-2.5 rounded-lg border border-border text-dim text-sm hover:text-muted cursor-pointer transition-colors">
                     Cancelar
                   </button>
-                  <button onClick={crearUsuario} disabled={saving || !form.email}
+                  <button onClick={crearUsuario} disabled={saving || !form.email || !form.negocio}
                     className="flex-1 py-2.5 rounded-lg bg-lime/10 border border-lime/30 text-lime font-mono font-semibold hover:bg-lime/20 transition-colors cursor-pointer disabled:opacity-40">
                     {saving ? 'Creando...' : 'Crear usuario'}
                   </button>

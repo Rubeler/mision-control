@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-browser'
+
+const supabase = createClient()
 import { Plus, X, Download, Pencil, Trash2, CheckCircle2 } from 'lucide-react'
 import { exportarExcel } from '@/lib/exportExcel'
 

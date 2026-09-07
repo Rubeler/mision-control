@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// Service-role: este webhook no tiene sesión de usuario (auth.uid() = NULL),
+// así que con RLS activado el cliente anon quedaría bloqueado por completo.
+const supabase = getSupabaseAdmin()
+// Sin sesión de usuario no aplica el DEFAULT de negocio_id — se pasa a mano.
+const NEGOCIO_ID_DBM = process.env.NEGOCIO_ID_DBM || '1bb1dfbe-f746-466e-8f6f-4a96bb420758'
 
 type EvolutionKey = {
   remoteJid?: string
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
       estado: 'Nuevo',
       fecha,
       notas: `Mensaje inicial: ${texto}`,
+      negocio_id: NEGOCIO_ID_DBM,
     })
     if (error) {
       console.error('[Evolution webhook] Error al guardar lead en Supabase:', error.message)

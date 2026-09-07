@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-browser'
+
+const supabase = createClient()
 import { Plus, X, GripVertical, Pencil, Trash2, Phone, Send, Search, MessageCircle } from 'lucide-react'
 
 type Lead = {

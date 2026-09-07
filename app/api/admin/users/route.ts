@@ -13,11 +13,38 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('*')
+    .select('*, negocios(nombre)')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
+}
+
+function slugify(nombre: string) {
+  return nombre
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // saca acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+// Busca un negocio existente por slug, o lo crea si no existe.
+async function obtenerONegocio(nombre: string): Promise<{ id: string } | { error: string }> {
+  const slug = slugify(nombre)
+  const { data: existente } = await supabaseAdmin
+    .from('negocios')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (existente) return existente
+
+  const { data: creado, error } = await supabaseAdmin
+    .from('negocios')
+    .insert({ nombre, slug })
+    .select('id')
+    .single()
+  if (error) return { error: error.message }
+  return creado
 }
 
 // POST — crear usuario nuevo
@@ -25,8 +52,13 @@ export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
   const { email, password, plan, negocio } = await req.json()
-  if (!email || !password || !plan) {
+  if (!email || !password || !plan || !negocio) {
     return NextResponse.json({ error: 'Faltan campos' }, { status: 400 })
+  }
+
+  const negocioResult = await obtenerONegocio(negocio)
+  if ('error' in negocioResult) {
+    return NextResponse.json({ error: 'No se pudo crear/vincular el negocio: ' + negocioResult.error }, { status: 500 })
   }
 
   // Crear en Supabase Auth
@@ -39,12 +71,12 @@ export async function POST(req: NextRequest) {
 
   // Crear perfil
   const { error: profileError } = await supabaseAdmin.from('profiles').insert({
-    id:      user!.id,
+    id:         user!.id,
     email,
-    role:    'user',
+    role:       'user',
     plan,
-    negocio: negocio || null,
-    activo:  true,
+    negocio_id: negocioResult.id,
+    activo:     true,
   })
   if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
 
