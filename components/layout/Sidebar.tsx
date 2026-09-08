@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen, MessageSquare, ShieldCheck, Boxes, ShoppingBag, Settings } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, Users, Receipt, Package, Menu, X, Gauge, BookOpen, MessageSquare, ShieldCheck, Boxes, ShoppingBag, Settings, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 
@@ -15,6 +15,7 @@ const NAV_BASE = [
   { href: '/stock',        label: 'Control Stock',icon: Boxes,           accent: false },
   { href: '/guiones',      label: 'Guiones',      icon: MessageSquare,   accent: false },
   { href: '/configuracion',label: 'Configuración',icon: Settings,        accent: false },
+  { href: '/asistente',    label: 'Asistente IA', icon: Sparkles,        accent: true  },
   { href: '/director',     label: 'Director OS',  icon: Gauge,           accent: true  },
   { href: '/galeria',      label: 'Ver catálogo', icon: BookOpen,        accent: true  },
 ]

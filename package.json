@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.44.2",
     "clsx": "^2.1.1",
