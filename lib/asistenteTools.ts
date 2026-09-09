@@ -3,6 +3,31 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'Mayo', 'Junio', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 const mesEnum: Schema = { type: SchemaType.STRING, description: `Mes a filtrar (${MESES.join(', ')}). Omitir para traer todos los meses.` }
+
+// El modelo a veces manda el mes en inglés (ej. "Aug" en vez de "Ago") pese a
+// la instrucción — sin esto, el filtro no matchea ninguna fila y devuelve
+// $0 en silencio, sin ningún error visible (peor que fallar).
+const MES_ALIASES: Record<string, string> = {
+  ene: 'Ene', enero: 'Ene', jan: 'Ene', january: 'Ene',
+  feb: 'Feb', febrero: 'Feb', february: 'Feb',
+  mar: 'Mar', marzo: 'Mar', march: 'Mar',
+  abr: 'Abr', abril: 'Abr', apr: 'Abr', april: 'Abr',
+  mayo: 'Mayo', may: 'Mayo',
+  junio: 'Junio', jun: 'Junio', june: 'Junio',
+  jul: 'Jul', julio: 'Jul', july: 'Jul',
+  ago: 'Ago', agosto: 'Ago', aug: 'Ago', august: 'Ago',
+  sep: 'Sep', sept: 'Sep', septiembre: 'Sep', setiembre: 'Sep', september: 'Sep',
+  oct: 'Oct', octubre: 'Oct', october: 'Oct',
+  nov: 'Nov', noviembre: 'Nov', november: 'Nov',
+  dic: 'Dic', diciembre: 'Dic', dec: 'Dic', december: 'Dic',
+}
+
+function normalizarMes(mes: unknown): { valor?: string; error?: string } {
+  if (typeof mes !== 'string' || !mes.trim()) return {}
+  const normalizado = MES_ALIASES[mes.trim().toLowerCase()]
+  if (!normalizado) return { error: `Mes no reconocido: "${mes}". Usar exactamente uno de: ${MESES.join(', ')}.` }
+  return { valor: normalizado }
+}
 const limiteParam: Schema = { type: SchemaType.NUMBER, description: 'Cantidad de productos a devolver (por defecto 5)' }
 
 export const toolDeclarations: FunctionDeclaration[] = [
@@ -42,8 +67,10 @@ export const toolDeclarations: FunctionDeclaration[] = [
 type Args = Record<string, unknown>
 
 async function resumenVentas(supabase: SupabaseClient, { mes }: Args) {
+  const { valor: mesNorm, error: mesError } = normalizarMes(mes)
+  if (mesError) return { error: mesError }
   let q = supabase.from('ventas').select('mes, producto, precio_venta, margen_pct, utilidad_bruta, canal')
-  if (typeof mes === 'string') q = q.eq('mes', mes)
+  if (mesNorm) q = q.eq('mes', mesNorm)
   const { data, error } = await q
   if (error) return { error: error.message }
   const v = data || []
@@ -52,7 +79,7 @@ async function resumenVentas(supabase: SupabaseClient, { mes }: Args) {
   const porCanal: Record<string, number> = {}
   v.forEach(x => { const c = x.canal || 'Sin canal'; porCanal[c] = (porCanal[c] || 0) + (x.precio_venta || 0) })
   return {
-    mes: mes ?? 'todos',
+    mes: mesNorm ?? 'todos',
     totalVendido,
     cantidadVentas: cantidad,
     ticketPromedio: cantidad ? totalVendido / cantidad : 0,
@@ -63,8 +90,10 @@ async function resumenVentas(supabase: SupabaseClient, { mes }: Args) {
 }
 
 async function resumenGastos(supabase: SupabaseClient, { mes }: Args) {
+  const { valor: mesNorm, error: mesError } = normalizarMes(mes)
+  if (mesError) return { error: mesError }
   let q = supabase.from('gastos').select('mes, tipo, categoria, monto, pagado, dia_vencimiento')
-  if (typeof mes === 'string') q = q.eq('mes', mes)
+  if (mesNorm) q = q.eq('mes', mesNorm)
   const { data, error } = await q
   if (error) return { error: error.message }
   const g = data || []
@@ -74,7 +103,7 @@ async function resumenGastos(supabase: SupabaseClient, { mes }: Args) {
     .filter(x => x.tipo === 'Fijo' && !x.pagado && x.dia_vencimiento != null)
     .map(x => ({ categoria: x.categoria, monto: x.monto, diaVencimiento: x.dia_vencimiento }))
   return {
-    mes: mes ?? 'todos',
+    mes: mesNorm ?? 'todos',
     total: g.reduce((s, x) => s + (x.monto || 0), 0),
     fijos: g.filter(x => x.tipo === 'Fijo').reduce((s, x) => s + (x.monto || 0), 0),
     variables: g.filter(x => x.tipo === 'Variable').reduce((s, x) => s + (x.monto || 0), 0),
@@ -84,8 +113,10 @@ async function resumenGastos(supabase: SupabaseClient, { mes }: Args) {
 }
 
 async function topProductos(supabase: SupabaseClient, { mes, limite }: Args) {
+  const { valor: mesNorm, error: mesError } = normalizarMes(mes)
+  if (mesError) return { error: mesError }
   let q = supabase.from('ventas').select('mes, producto, precio_venta, margen_pct')
-  if (typeof mes === 'string') q = q.eq('mes', mes)
+  if (mesNorm) q = q.eq('mes', mesNorm)
   const { data, error } = await q
   if (error) return { error: error.message }
   const map: Record<string, { total: number; count: number; margen: number }> = {}
@@ -102,7 +133,7 @@ async function topProductos(supabase: SupabaseClient, { mes, limite }: Args) {
     .map(([producto, v]) => ({ producto, totalVendido: v.total, cantidadVentas: v.count, margenPromedioPct: (v.margen / v.count) * 100 }))
     .sort((a, b) => b.totalVendido - a.totalVendido)
     .slice(0, n)
-  return { mes: mes ?? 'todos', productos }
+  return { mes: mesNorm ?? 'todos', productos }
 }
 
 async function resumenLeads(supabase: SupabaseClient) {

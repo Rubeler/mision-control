@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI, type Content } from '@google/generative-ai'
+import { GoogleGenerativeAI, type Content, type GenerativeModel } from '@google/generative-ai'
 import { createClient } from '@/lib/supabase-server'
 import { toolDeclarations, createAsistenteTools } from '@/lib/asistenteTools'
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'Mayo', 'Junio', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 const MAX_ROUNDS = 3
+
+// Gemini a veces devuelve 429/503 por sobrecarga temporal del lado de Google
+// (visto en producción — se resuelve solo al reintentar). 2 reintentos cortos
+// evitan mostrarle ese hipo al usuario como si fuera un error real nuestro.
+const STATUS_REINTENTABLES = [429, 503]
+
+async function generarConReintento(model: GenerativeModel, contents: Content[], intentos = 3) {
+  for (let i = 0; i < intentos; i++) {
+    try {
+      return await model.generateContent({ contents })
+    } catch (err) {
+      const status = (err as { status?: number })?.status
+      const esUltimoIntento = i === intentos - 1
+      if (esUltimoIntento || !status || !STATUS_REINTENTABLES.includes(status)) throw err
+      await new Promise(r => setTimeout(r, 700 * (i + 1)))
+    }
+  }
+  throw new Error('No se pudo generar la respuesta')
+}
 
 function systemPrompt() {
   const hoy = new Date()
@@ -48,7 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     let round = 0
     while (round < MAX_ROUNDS) {
-      const result = await model.generateContent({ contents })
+      const result = await generarConReintento(model, contents)
       const calls = result.response.functionCalls()
 
       if (!calls || calls.length === 0) {
@@ -68,10 +87,14 @@ export async function POST(req: NextRequest) {
       round++
     }
 
-    const result = await model.generateContent({ contents })
+    const result = await generarConReintento(model, contents)
     return NextResponse.json({ reply: result.response.text() || 'No pude terminar de procesar eso, ¿podés reformular la pregunta?' })
   } catch (err) {
     console.error('[asistente] error:', err)
-    return NextResponse.json({ error: 'Hubo un error generando la respuesta. Probá de nuevo.' }, { status: 500 })
+    const status = (err as { status?: number })?.status
+    const mensaje = status && STATUS_REINTENTABLES.includes(status)
+      ? 'Gemini está con mucha demanda en este momento. Probá de nuevo en unos segundos.'
+      : 'Hubo un error generando la respuesta. Probá de nuevo.'
+    return NextResponse.json({ error: mensaje }, { status: 500 })
   }
 }
