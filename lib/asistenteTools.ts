@@ -29,6 +29,7 @@ function normalizarMes(mes: unknown): { valor?: string; error?: string } {
   return { valor: normalizado }
 }
 const limiteParam: Schema = { type: SchemaType.NUMBER, description: 'Cantidad de productos a devolver (por defecto 5)' }
+const diasParam: Schema = { type: SchemaType.NUMBER, description: 'Cantidad de días hacia atrás desde hoy a considerar. Omitir para traer todas sin límite de fecha.' }
 
 export const toolDeclarations: FunctionDeclaration[] = [
   {
@@ -51,6 +52,11 @@ export const toolDeclarations: FunctionDeclaration[] = [
         limite: limiteParam,
       },
     },
+  },
+  {
+    name: 'entregas_pendientes',
+    description: 'Lista el detalle (fecha, producto, canal, precio) de las ventas que todavía NO están marcadas como "Entregada" en el panel de Ventas — es decir, entregas pendientes. Usar para cualquier pregunta sobre qué falta entregar, envíos pendientes o estado de entrega. Se puede limitar a los últimos N días.',
+    parameters: { type: SchemaType.OBJECT, properties: { dias: diasParam } },
   },
   {
     name: 'resumen_leads',
@@ -136,6 +142,25 @@ async function topProductos(supabase: SupabaseClient, { mes, limite }: Args) {
   return { mes: mesNorm ?? 'todos', productos }
 }
 
+async function entregasPendientes(supabase: SupabaseClient, { dias }: Args) {
+  let q = supabase.from('ventas').select('fecha, producto, canal, precio_venta, entregada').order('fecha', { ascending: false })
+  if (typeof dias === 'number' && dias > 0) {
+    const desde = new Date()
+    desde.setDate(desde.getDate() - dias)
+    q = q.gte('fecha', desde.toISOString().split('T')[0])
+  }
+  const { data, error } = await q
+  if (error) return { error: error.message }
+  // entregada puede ser false o null según cómo se cargó la venta — cualquiera
+  // que no sea exactamente true cuenta como pendiente.
+  const pendientes = (data || []).filter(x => x.entregada !== true)
+  return {
+    diasConsultados: typeof dias === 'number' ? dias : 'sin límite',
+    cantidadPendientes: pendientes.length,
+    pendientes: pendientes.map(x => ({ fecha: x.fecha, producto: x.producto, canal: x.canal, precio: x.precio_venta })),
+  }
+}
+
 async function resumenLeads(supabase: SupabaseClient) {
   const { data, error } = await supabase.from('leads').select('estado, canal')
   if (error) return { error: error.message }
@@ -174,6 +199,7 @@ export function createAsistenteTools(supabase: SupabaseClient) {
     resumen_ventas: (args) => resumenVentas(supabase, args),
     resumen_gastos: (args) => resumenGastos(supabase, args),
     top_productos: (args) => topProductos(supabase, args),
+    entregas_pendientes: (args) => entregasPendientes(supabase, args),
     resumen_leads: () => resumenLeads(supabase),
     resumen_stock: () => resumenStock(supabase),
   }
