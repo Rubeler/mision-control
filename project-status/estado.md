@@ -1,5 +1,21 @@
 # Misión Control — Estado del Proyecto
-**Última actualización:** 19/09/2026 — Sesión exitosa: Fix de Admin resuelto y confirmado en local por el usuario (soporte super_admin en Sidebar y Navbar), diagramas completos del sistema generados (DIAGRAMAS_SISTEMA.md), paquete de marketing y lanzamiento en redes listo para lunes/martes (MARKETING_LANZAMIENTO.md con Zernio MCP para Instagram). Servidor local verificado en http://localhost:3000.
+**Última actualización:** 23/09/2026 — Implementado y desplegado el **bloqueo estricto de usuarios suspendidos (control de cobro/mensualidad)** + Fix de Admin (soporte `super_admin` en Sidebar y Navbar) + URL de invitación corregida a `mision-control.vercel.app`. Build verificado con 0 errores (29/29 rutas).
+
+## 🟢 Sesión 23/09/2026 — Control de Cobro/Suspensión y Deploy a Producción
+
+1. **🔒 Bloqueo Estricto por Falta de Pago (Suspensión de cuentas):**
+   - **Lógica implementada:** Al desactivar a un usuario en `/admin` (toggle activo/inactivo):
+     - Se actualiza `profiles.activo = false` y se sincroniza en Supabase Auth Admin con baneo temporal inmediato (`ban_duration: '876000h'`). Al reactivar, se restaura a `'none'`.
+     - En `app/login/page.tsx`, se valida el campo `activo` y errores de baneo. Si la cuenta está suspendida, se cierra la sesión y se muestra el mensaje: *"Tu cuenta se encuentra suspendida por falta de pago o mantenimiento. Contactá a administración."*
+     - En `Navbar.tsx` y `Sidebar.tsx`, si un usuario que ya tenía la sesión abierta es suspendido por Rubén mientras navega, en su siguiente interacción se cierra la sesión en segundo plano y se lo redirige inmediatamente a `/login?suspended=1`.
+     - En `app/admin/page.tsx`, se corrigió la URL del mensaje copiado para enviar por WhatsApp al cliente (se cambió el dominio viejo `mision-control-omega.vercel.app` por el oficial `mision-control.vercel.app`).
+   - **Compilación previa:** `npm run build` ejecutado en local (0 errores en las 29 rutas).
+
+2. **✅ Deploy a Producción en Vercel:**
+   - Commit `6ce3269` inicial enviado a `origin/master`.
+   - Segundo commit con el sistema de suspensión listo para push.
+
+---
 
 ## 🟢 Sesión 19/09/2026 — Fix Admin local, Diagramas y Lanzamiento de Marketing
 
@@ -7,7 +23,7 @@
    - **Causa raíz:** En la migración a multi-tenancy del 07/09/2026, el perfil de `c.tecnozone@gmail.com` pasó a `role = 'super_admin'`. Tanto `Sidebar.tsx` como `Navbar.tsx` verificaban estrictamente `role === 'admin'`, por lo que el botón desapareció visualmente del menú.
    - **Solución aplicada:** Se amplió la validación en `components/layout/Sidebar.tsx` (L35) y `Navbar.tsx` (L31) para admitir ambos roles: `data?.role === 'admin' || data?.role === 'super_admin'`.
    - **Verificación local:** Build local (`npm run build`) completado con 0 errores (las 29 rutas generadas limpias). Servidor dev levantado en `http://localhost:3000`. El usuario probó en su navegador y confirmó con captura que el botón Admin en el Sidebar/Navbar y el panel `/admin` (con los 3 usuarios de DBM) están 100% operativos.
-   - **Regla respetada:** Todo se verificó en local primero. Queda pendiente el push/deploy a producción en Vercel cuando se decida.
+   - **Deploy realizado:** Subido a Vercel el 23/09/2026.
 
 2. **🗺️ Diagramas de Arquitectura y Sistema (`DIAGRAMAS_SISTEMA.md`):**
    - Se redactó y guardó la documentación técnica visual completa con diagramas Mermaid:
@@ -22,11 +38,11 @@
      - **Conexión Directa a Instagram vía Zernio MCP:** Documentado el uso del conector `https://mcp.zernio.com/mcp` en Claude / Antigravity para programar y publicar carruseles y posts directamente en `@nexia.soluciones` / `@debuenamadera`.
      - **Guion de DM en Frío:** Mensaje breve y conversacional para prospectar 15-20 mueblerías por Instagram o WhatsApp.
 
-4. **⏳ Próxima sesión (Mañana):**
+4. **⏳ Próximos pasos pendientes:**
    - [ ] Probar en vivo el flujo completo del bot de WhatsApp (Zernio + ngrok o migración a Route Handlers en Vercel para no depender de la PC prendida).
    - [ ] Evaluar y ajustar el system prompt de WhatsApp según los productos de catálogo.
    - [ ] Programar / publicar la primera pieza de marketing para el lanzamiento de la semana.
-   - [ ] Cuando el usuario lo indique: git commit + push a Vercel del fix de Admin.
+   - [x] git commit + push a Vercel del fix de Admin (completado el 23/09/2026, commit `6ce3269`).
 
 ---
 

@@ -31,7 +31,13 @@ export default function Sidebar() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.id) {
-        supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data }) => {
+        supabase.from('profiles').select('role, activo').eq('id', user.id).single().then(({ data }) => {
+          if (data && data.activo === false) {
+            supabase.auth.signOut().then(() => {
+              window.location.href = '/login?suspended=1'
+            })
+            return
+          }
           setIsAdmin(data?.role === 'admin' || data?.role === 'super_admin')
         })
       }

@@ -91,7 +91,17 @@ export async function PATCH(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'Falta el ID' }, { status: 400 })
 
   const updates: Record<string, unknown> = {}
-  if (activo !== undefined) updates.activo = activo
+  if (activo !== undefined) {
+    updates.activo = activo
+    try {
+      // Sincronizar bloqueo en Supabase Auth directamente
+      await supabaseAdmin.auth.admin.updateUserById(id, {
+        ban_duration: activo ? 'none' : '876000h',
+      })
+    } catch (e) {
+      console.error('Error sincronizando ban en auth:', e)
+    }
+  }
   if (plan !== undefined)   updates.plan   = plan
   if (vence_en !== undefined) updates.vence_en = vence_en
 

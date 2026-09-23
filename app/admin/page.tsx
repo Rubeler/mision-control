@@ -105,7 +105,7 @@ export default function AdminPage() {
 
   const copiarCredenciales = () => {
     if (!creado) return
-    const texto = `🔐 Acceso a Misión Control\n\n📧 Email: ${creado.email}\n🔑 Contraseña: ${creado.password}\n\n🌐 URL: https://mision-control-omega.vercel.app\n\nPodés cambiar tu contraseña desde la app.`
+    const texto = `🔐 Acceso a Misión Control\n\n📧 Email: ${creado.email}\n🔑 Contraseña: ${creado.password}\n\n🌐 URL: https://mision-control.vercel.app\n\nPodés cambiar tu contraseña desde la app.`
     navigator.clipboard.writeText(texto)
     setCopiado(true)
     setTimeout(() => setCopiado(false), 2000)

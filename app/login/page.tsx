@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 
@@ -11,17 +11,46 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('suspended')) {
+        setError('Tu cuenta ha sido suspendida. Contactate con administración para regularizar el servicio.')
+      }
+    }
+  }, [])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('Email o contraseña incorrectos')
+      if (error.message.toLowerCase().includes('banned')) {
+        setError('Tu cuenta se encuentra suspendida por falta de pago o mantenimiento. Contactá a administración.')
+      } else {
+        setError('Email o contraseña incorrectos')
+      }
       setLoading(false)
       return
+    }
+
+    // Verificar si el perfil está activo en la base de datos
+    if (data?.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('activo')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profile && profile.activo === false) {
+        await supabase.auth.signOut()
+        setError('Tu cuenta se encuentra suspendida por falta de pago o mantenimiento. Contactá a administración.')
+        setLoading(false)
+        return
+      }
     }
 
     router.push('/')
