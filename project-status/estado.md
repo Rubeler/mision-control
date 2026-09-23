@@ -12,8 +12,8 @@
    - **Compilación previa:** `npm run build` ejecutado en local (0 errores en las 29 rutas).
 
 2. **✅ Deploy a Producción en Vercel:**
-   - Commit `6ce3269` inicial enviado a `origin/master`.
-   - Segundo commit con el sistema de suspensión listo para push.
+   - **Commit 1 (`6ce3269`):** Fix de permisos para `super_admin` en Sidebar y Navbar, inclusión de `DIAGRAMAS_SISTEMA.md` y `MARKETING_LANZAMIENTO.md` en el repositorio, y `.gitignore` reforzado.
+   - **Commit 2 (`f669bd2`):** Sistema de suspensión estricta por falta de pago (`ban_duration` en Supabase Auth, validación en Login con aviso al cliente, y expulsión en tiempo real en Navbar/Sidebar). Desplegado en Vercel con éxito.
 
 ---
 
@@ -80,7 +80,7 @@ Al intentar probar el bot de WhatsApp, se encontró que `GEMINI_API_KEY` está e
 - Webhook WhatsApp (bot oficial Meta, en desuso — ver Frente WhatsApp): https://mision-control.vercel.app/api/whatsapp
 - Webhook WhatsApp QR (Evolution API, en desuso — ver Frente WhatsApp): https://mision-control.vercel.app/api/evolution/webhook
 - **Canal WhatsApp realmente activo hoy:** Zernio, vía `whatsapp-service/index.js` corriendo local en la PC + túnel fijo de ngrok (`undiluted-carton-unbitten.ngrok-free.dev`) — necesita las 2 ventanas de PowerShell abiertas (ver pasos en `../MisionControl.md`).
-- Último commit en producción: `2bda052` — fix(asistente): normalizar mes y reintentar ante 503 de Gemini (09/09/2026)
+- Último commit en producción: `f669bd2` — feat(billing): bloqueo estricto de usuarios suspendidos por falta de pago y expulsión en tiempo real (23/09/2026)
 - Variable de entorno nueva (Vercel + `.env.local` + `whatsapp-service/.env` heredado): `NEGOCIO_ID_DBM=1bb1dfbe-f746-466e-8f6f-4a96bb420758` — UUID fijo del negocio "De Buena Madera" en la tabla nueva `negocios`, usado por el código server-side que inserta sin sesión de usuario (ver sección Multi-tenancy).
 - Variables de entorno agregadas a Vercel (08/09/2026): `GEMINI_API_KEY`, `GEMINI_MODEL=gemini-3.6-flash` — las usa el nuevo Asistente IA (ver sección dedicada).
 
