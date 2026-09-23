@@ -28,7 +28,7 @@ export default function Navbar() {
         setNombre(user.email.split('@')[0])
         // Obtener rol desde la tabla profiles
         supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data }) => {
-          if (data?.role === 'admin') {
+          if (data?.role === 'admin' || data?.role === 'super_admin') {
             setIsAdmin(true)
           }
         })

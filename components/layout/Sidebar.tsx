@@ -32,7 +32,7 @@ export default function Sidebar() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.id) {
         supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data }) => {
-          setIsAdmin(data?.role === 'admin')
+          setIsAdmin(data?.role === 'admin' || data?.role === 'super_admin')
         })
       }
     })
