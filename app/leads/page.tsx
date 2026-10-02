@@ -75,6 +75,17 @@ function toWANumber(telefono: string) {
   return n
 }
 
+// Días desde la fecha del lead (es la que se usa como "última actividad" en
+// toda la pantalla: la que se ve en cada tarjeta y la que se edita a mano).
+function diasDesde(fecha: string) {
+  if (!fecha) return 0
+  const ms = new Date().setHours(0, 0, 0, 0) - new Date(fecha).setHours(0, 0, 0, 0)
+  return Math.max(0, Math.round(ms / 86400000))
+}
+
+const UMBRAL_PARA_HOY  = 3  // días sin actividad para pedir acción
+const UMBRAL_ESTANCADO = 10 // días sin actividad para considerarlo frío
+
 export default function LeadsPage() {
   const [leads, setLeads]           = useState<Lead[]>([])
   const [loading, setLoading]       = useState(true)
@@ -156,6 +167,18 @@ export default function LeadsPage() {
     setDragId(null)
   }
 
+  const enviarCatalogoWA = (l: Lead) => {
+    const base = 'https://mision-control-omega.vercel.app/galeria'
+    const nombre = l.nombre || ''
+    const saludo = nombre ? `Hola ${nombre}! ` : 'Hola! '
+    const texto = encodeURIComponent(`${saludo}Te mando nuestro catálogo completo:\n${base}`)
+    if (l.telefono) {
+      window.open(`https://wa.me/${toWANumber(l.telefono)}?text=${texto}`, '_blank')
+    } else {
+      window.open(`https://wa.me/?text=${texto}`, '_blank')
+    }
+  }
+
   const abrirNuevo = () => { setEditLead(null); setForm(FORM_VACIO); setShowModal(true) }
 
   const abrirEditar = (l: Lead) => {
@@ -204,6 +227,20 @@ export default function LeadsPage() {
   const perdidos = leads.filter(l => l.estado === 'Perdido').length
   const tasa    = total ? ((ganados / total) * 100).toFixed(0) : '0'
 
+  // Bandeja "Acciones de hoy" — leads activos (Nuevo/Seguimiento) ordenados
+  // por días sin actividad, para no tener que escanear el Kanban entero.
+  const activos      = leads.filter(l => l.estado === 'Nuevo' || l.estado === 'Seguimiento')
+  const paraHoy       = activos.filter(l => diasDesde(l.fecha) >= UMBRAL_PARA_HOY).sort((a, b) => diasDesde(b.fecha) - diasDesde(a.fecha))
+  const estancados    = activos.filter(l => diasDesde(l.fecha) >= UMBRAL_ESTANCADO)
+  const nuevosCount   = leads.filter(l => l.estado === 'Nuevo').length
+  const seguimientoCount = leads.filter(l => l.estado === 'Seguimiento').length
+  const hoyDate = new Date()
+  const ganadosEsteMes = leads.filter(l => {
+    if (l.estado !== 'Ganado' || !l.fecha) return false
+    const f = new Date(l.fecha)
+    return f.getMonth() === hoyDate.getMonth() && f.getFullYear() === hoyDate.getFullYear()
+  }).length
+
   return (
     <div className="space-y-5">
 
@@ -225,6 +262,65 @@ export default function LeadsPage() {
           <Plus size={15} /> Nuevo lead
         </button>
       </div>
+
+      {/* Centro de Control — resumen + bandeja de acciones, antes del Kanban */}
+      {!loading && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="card p-3.5 space-y-1 border-yellow-400/30">
+              <p className="text-2xl font-mono font-bold text-yellow-400">{paraHoy.length}</p>
+              <p className="label text-xs">Para hoy</p>
+            </div>
+            <div className="card p-3.5 space-y-1 border-cyan/30">
+              <p className="text-2xl font-mono font-bold text-cyan">{nuevosCount}</p>
+              <p className="label text-xs">Nuevos</p>
+            </div>
+            <div className="card p-3.5 space-y-1 border-red-400/30">
+              <p className="text-2xl font-mono font-bold text-red-400">{estancados.length}</p>
+              <p className="label text-xs">Estancados (+{UMBRAL_ESTANCADO}d)</p>
+            </div>
+            <div className="card p-3.5 space-y-1 border-lime/30">
+              <p className="text-2xl font-mono font-bold text-lime">{ganadosEsteMes}</p>
+              <p className="label text-xs">Ganados este mes</p>
+            </div>
+          </div>
+
+          {paraHoy.length > 0 && (
+            <div className="card p-4 space-y-2">
+              <p className="label text-xs">Acciones de hoy — {paraHoy.length} lead{paraHoy.length > 1 ? 's' : ''} sin actividad reciente</p>
+              <div className="divide-y divide-border/50">
+                {paraHoy.slice(0, 8).map(l => {
+                  const dias = diasDesde(l.fecha)
+                  return (
+                    <div key={l.id} className="flex items-center justify-between gap-3 py-2.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dias >= UMBRAL_ESTANCADO ? 'bg-red-400' : 'bg-yellow-400'}`} />
+                          {l.nombre && <span className="text-xs font-mono text-cyan truncate">{l.nombre}</span>}
+                          <span className="text-sm text-muted truncate">{l.producto}</span>
+                        </div>
+                        <p className="text-xs text-dim mt-0.5">Hace {dias} día{dias !== 1 ? 's' : ''} · {l.canal}</p>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                        {l.telefono && (
+                          <a href={`https://wa.me/${toWANumber(l.telefono)}`} target="_blank" rel="noreferrer"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-lime/10 border border-lime/30 text-lime text-xs font-semibold hover:bg-lime/20 transition-colors cursor-pointer">
+                            <MessageCircle size={11} /> WhatsApp
+                          </a>
+                        )}
+                        <button onClick={() => abrirEditar(l)}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-dim text-xs hover:text-muted transition-colors cursor-pointer">
+                          <Pencil size={11} /> Ver
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Kanban */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -302,17 +398,7 @@ export default function LeadsPage() {
                       className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-lime/10 border border-lime/30 text-lime text-xs font-semibold hover:bg-lime/20 transition-colors cursor-pointer">
                       <Send size={11} /> Muebles
                     </button>
-                    <button onClick={() => {
-                      const base = 'https://mision-control-omega.vercel.app/galeria'
-                      const nombre = l.nombre || ''
-                      const saludo = nombre ? `Hola ${nombre}! ` : 'Hola! '
-                      const texto = encodeURIComponent(`${saludo}Te mando nuestro catálogo completo:\n${base}`)
-                      if (l.telefono) {
-                        window.open(`https://wa.me/${toWANumber(l.telefono)}?text=${texto}`, '_blank')
-                      } else {
-                        window.open(`https://wa.me/?text=${texto}`, '_blank')
-                      }
-                    }}
+                    <button onClick={() => enviarCatalogoWA(l)}
                       className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-violet/10 border border-violet/30 text-violet text-xs font-semibold hover:bg-violet/20 transition-colors cursor-pointer">
                       <MessageCircle size={11} /> Catálogo
                     </button>
