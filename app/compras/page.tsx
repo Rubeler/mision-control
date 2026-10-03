@@ -14,16 +14,28 @@ interface Compra {
   fecha: string
   proveedor: string
   producto: string
+  producto_id?: string | null
   cantidad: number
   precio_unitario: number
   total: number
   notas?: string | null
 }
 
+interface ProductoStock {
+  id: string
+  producto: string
+  stock: number
+}
+
+const NUEVO = '__nuevo__'
+
 const emptyForm = {
   fecha: new Date().toISOString().split('T')[0],
   proveedor: 'DBM',
+  proveedorOtro: '',
+  producto_id: '',
   producto: '',
+  nuevoPrecioVenta: '',
   cantidad: '1',
   precio_unitario: '',
   notas: '',
@@ -50,6 +62,7 @@ export default function ComprasPage() {
   const [deleting, setDeleting] = useState(false)
   const [editId, setEditId]     = useState<string | null>(null)
   const [form, setForm]         = useState(emptyForm)
+  const [productos, setProductos] = useState<ProductoStock[]>([])
 
   // Filtros
   const hoy = new Date()
@@ -65,7 +78,12 @@ export default function ComprasPage() {
       })
   }
 
-  useEffect(() => { cargar() }, [])
+  const cargarProductos = () => {
+    supabase.from('productos').select('id, producto, stock').order('producto')
+      .then(({ data }) => setProductos(data || []))
+  }
+
+  useEffect(() => { cargar(); cargarProductos() }, [])
 
   const abrirNuevo = () => {
     setEditId(null)
@@ -75,10 +93,14 @@ export default function ComprasPage() {
 
   const abrirEditar = (c: Compra) => {
     setEditId(c.id)
+    const esProveedorBase = PROVEEDORES.includes(c.proveedor)
     setForm({
       fecha: c.fecha,
-      proveedor: c.proveedor,
+      proveedor: esProveedorBase ? c.proveedor : 'Otro',
+      proveedorOtro: esProveedorBase ? '' : c.proveedor,
+      producto_id: c.producto_id || '',
       producto: c.producto,
+      nuevoPrecioVenta: '',
       cantidad: c.cantidad.toString(),
       precio_unitario: c.precio_unitario.toString(),
       notas: c.notas || '',
@@ -95,23 +117,70 @@ export default function ComprasPage() {
   }
 
   const guardar = async () => {
-    if (!form.producto || !form.precio_unitario || !form.cantidad) return
+    const esNuevoArticulo = form.producto_id === NUEVO
+    if (!form.producto_id || !form.precio_unitario || !form.cantidad) return
+    if (esNuevoArticulo && (!form.producto.trim() || !form.nuevoPrecioVenta)) return
     setSaving(true)
+
+    const cantidad = parseInt(form.cantidad) || 1
+    const precioUnitario = parseFloat(form.precio_unitario)
+
+    // Si es un artículo nuevo, primero se crea en Control de Stock (con el
+    // stock ya en la cantidad comprada) y recién después se registra la
+    // compra apuntando a ese producto.
+    let productoId = form.producto_id
+    let nombreProducto = form.producto
+    if (esNuevoArticulo) {
+      const { data: nuevo, error: errNuevo } = await supabase.from('productos').insert({
+        producto: form.producto.trim(),
+        costo: precioUnitario,
+        precio_venta: parseFloat(form.nuevoPrecioVenta),
+        categoria: 'General',
+        linea: 'madera',
+        stock: cantidad,
+        alerta_critica: false,
+      }).select('id').single()
+      if (errNuevo || !nuevo) {
+        setSaving(false)
+        alert('Error al crear el artículo nuevo: ' + errNuevo?.message)
+        return
+      }
+      productoId = nuevo.id
+      nombreProducto = form.producto.trim()
+    } else {
+      nombreProducto = productos.find(p => p.id === form.producto_id)?.producto || form.producto
+    }
+
+    const proveedorFinal = form.proveedor === 'Otro' && form.proveedorOtro.trim()
+      ? form.proveedorOtro.trim()
+      : form.proveedor
+
     const datos = {
       fecha: form.fecha,
-      proveedor: form.proveedor,
-      producto: form.producto,
-      cantidad: parseInt(form.cantidad) || 1,
-      precio_unitario: parseFloat(form.precio_unitario),
+      proveedor: proveedorFinal,
+      producto: nombreProducto,
+      producto_id: productoId,
+      cantidad,
+      precio_unitario: precioUnitario,
       notas: form.notas.trim() || null,
     }
     let error
     if (editId) {
+      // Editar una compra no vuelve a tocar el stock — solo corrige el
+      // registro histórico. El stock ya se sumó cuando se creó la compra.
       const res = await supabase.from('compras').update(datos).eq('id', editId)
       error = res.error
     } else {
       const res = await supabase.from('compras').insert(datos)
       error = res.error
+      // Artículo ya existente: sumarle la cantidad comprada al stock actual.
+      // (Un artículo recién creado arriba ya nació con ese stock, no hace
+      // falta sumarle de nuevo acá.)
+      if (!error && !esNuevoArticulo) {
+        const actual = productos.find(p => p.id === productoId)?.stock ?? 0
+        const { error: errStock } = await supabase.from('productos').update({ stock: actual + cantidad }).eq('id', productoId)
+        if (errStock) console.error('Error actualizando stock tras la compra:', errStock.message)
+      }
     }
     setSaving(false)
     if (error) {
@@ -120,6 +189,7 @@ export default function ComprasPage() {
     }
     cerrarModal()
     cargar()
+    cargarProductos()
   }
 
   const eliminar = async () => {
@@ -131,6 +201,10 @@ export default function ComprasPage() {
     cerrarModal()
     cargar()
   }
+
+  // Proveedores reales que aparecen en el historial (incluye los que se
+  // escribieron a mano con "Otro"), para que el filtro los encuentre.
+  const proveedoresFiltro = Array.from(new Set([...PROVEEDORES.filter(p => p !== 'Otro'), ...compras.map(c => c.proveedor)])).sort()
 
   // Filtrado
   const filtered = compras.filter(c => {
@@ -223,7 +297,7 @@ export default function ComprasPage() {
           <select value={filtroProveedor} onChange={e => setFiltroProveedor(e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none cursor-pointer">
             <option value="Todos">Todos los proveedores</option>
-            {PROVEEDORES.map(p => <option key={p} value={p}>{p}</option>)}
+            {proveedoresFiltro.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
       </div>
@@ -317,19 +391,54 @@ export default function ComprasPage() {
                 <select value={form.proveedor} onChange={e => setForm(f => ({ ...f, proveedor: e.target.value }))}
                   className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50 cursor-pointer">
                   {PROVEEDORES.map(p => <option key={p} value={p}>{p}</option>)}
-                  <option value="Otro">Otro</option>
                 </select>
               </div>
             </div>
 
-            {/* Producto */}
+            {form.proveedor === 'Otro' && (
+              <div>
+                <label className="label text-xs mb-1 block">¿Quién es el proveedor?</label>
+                <input value={form.proveedorOtro}
+                  onChange={e => setForm(f => ({ ...f, proveedorOtro: e.target.value }))}
+                  placeholder="Nombre del proveedor"
+                  className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+              </div>
+            )}
+
+            {/* Producto — elegido del catálogo real de Control de Stock, así la
+                compra queda vinculada y le puede sumar stock sola. */}
             <div>
-              <label className="label text-xs mb-1 block">Artículo / Producto</label>
-              <input value={form.producto}
-                onChange={e => setForm(f => ({ ...f, producto: e.target.value }))}
-                placeholder="Ej: Cama 1 Plaza, Ropero 1.20m..."
-                className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+              <label className="label text-xs mb-1 block">Artículo</label>
+              <select value={form.producto_id}
+                onChange={e => setForm(f => ({ ...f, producto_id: e.target.value, producto: e.target.value === NUEVO ? '' : f.producto }))}
+                className="w-full px-3 py-2 rounded-lg bg-card-2 border border-border text-sm text-muted focus:outline-none focus:border-cyan/50 cursor-pointer">
+                <option value="" disabled>Seleccioná un artículo...</option>
+                <option value={NUEVO}>➕ Crear artículo nuevo...</option>
+                {productos.map(p => (
+                  <option key={p.id} value={p.id}>{p.producto} (stock: {p.stock})</option>
+                ))}
+              </select>
             </div>
+
+            {form.producto_id === NUEVO && (
+              <div className="grid grid-cols-2 gap-3 bg-card-2/50 rounded-lg p-3 border border-cyan/20">
+                <div className="col-span-2">
+                  <label className="label text-xs mb-1 block">Nombre del artículo nuevo</label>
+                  <input value={form.producto}
+                    onChange={e => setForm(f => ({ ...f, producto: e.target.value }))}
+                    placeholder="Ej: Cama 1 Plaza 0.80m"
+                    className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+                </div>
+                <div className="col-span-2">
+                  <label className="label text-xs mb-1 block">Precio de venta</label>
+                  <input type="number" value={form.nuevoPrecioVenta}
+                    onChange={e => setForm(f => ({ ...f, nuevoPrecioVenta: e.target.value }))}
+                    placeholder="0"
+                    className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-muted focus:outline-none focus:border-cyan/50" />
+                  <p className="text-xs text-dim mt-1">El costo lo toma del precio unitario de abajo. Después podés ajustar categoría/línea desde Control de Stock.</p>
+                </div>
+              </div>
+            )}
 
             {/* Cantidad + Precio */}
             <div className="grid grid-cols-2 gap-3">
@@ -369,14 +478,17 @@ export default function ComprasPage() {
             </div>
 
             {/* Aviso sobre stock */}
-            <div className="bg-violet/5 border border-violet/20 rounded-lg px-3 py-2">
+            <div className="bg-lime/5 border border-lime/20 rounded-lg px-3 py-2">
               <p className="text-xs text-dim">
-                💡 <span className="text-violet font-semibold">Recordá:</span> después de registrar la compra, actualizá el stock del producto en <span className="text-cyan">Control de Stock</span>.
+                ✅ <span className="text-lime font-semibold">Automático:</span> {editId
+                  ? 'esta compra ya sumó stock al crearse — editarla corrige solo el registro, no vuelve a tocar el stock.'
+                  : <>al registrar la compra, el stock del artículo en <span className="text-cyan">Control de Stock</span> se actualiza solo.</>}
               </p>
             </div>
 
             <div className="space-y-2 pt-1">
-              <button onClick={guardar} disabled={saving || !form.producto || !form.precio_unitario || !form.cantidad}
+              <button onClick={guardar}
+                disabled={saving || !form.producto_id || !form.precio_unitario || !form.cantidad || (form.producto_id === NUEVO && (!form.producto.trim() || !form.nuevoPrecioVenta))}
                 className="w-full py-2.5 rounded-lg bg-cyan/10 border border-cyan/30 text-cyan font-mono font-semibold hover:bg-cyan/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                 {saving ? 'Guardando...' : editId ? 'Actualizar compra' : 'Registrar compra'}
               </button>
